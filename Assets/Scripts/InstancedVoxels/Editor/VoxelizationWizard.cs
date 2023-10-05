@@ -1,12 +1,25 @@
+using System.IO;
 using System.Linq;
 using InstancedVoxels.Voxelization;
 using UnityEditor;
 using UnityEngine;
 
 namespace InstancedVoxels.Editor {
-	public class VoxelizationWizard {
+	public class VoxelizationWizard : ScriptableWizard {
+		private static float _lastVoxelSize = 1.0f;
+		private static string _lastSavePath;
+		
+		[SerializeField]
+		private float _voxelSize;
+		
 		[MenuItem("Voxels/Voxelization Wizard")]
-		public static void TestVoxelization() {
+		private static void CreateWizard() {
+			var wizard = DisplayWizard<VoxelizationWizard>("Voxelize GameObject", "Save", "Cancel");
+			wizard._voxelSize = _lastVoxelSize;
+		}
+
+		private void OnWizardCreate() {
+			_lastVoxelSize = _voxelSize;
 			var selectedObject = Selection.activeObject as GameObject;
 			if (selectedObject == null) return;
 			var meshFilters = selectedObject.GetComponentsInChildren<MeshFilter>();
@@ -15,21 +28,22 @@ namespace InstancedVoxels.Editor {
 			var textures = meshFilters
 				.Select(f => f.GetComponent<MeshRenderer>().sharedMaterial.mainTexture as Texture2D).ToArray();
 			
-			var voxelSize = 0.01f;
-			var satVoxelizer = new SatVoxelizer(voxelSize, meshes, positions, textures);
+			var satVoxelizer = new Voxelizer(_voxelSize, meshes, positions, textures);
 			var watch = new System.Diagnostics.Stopwatch();
 			watch.Start();
-			var box = satVoxelizer.Voxelize();
+			var voxels = satVoxelizer.Voxelize();
 			watch.Stop();
-			Debug.Log($"Execution Time: {watch.ElapsedMilliseconds} ms");
-
-			var scriptableVoxels =
-				ScriptableVoxels.Create(voxelSize, satVoxelizer.Bounds.min, satVoxelizer.BoxSize, box.ToArray());
-			box.Dispose();
+			Debug.Log($"Voxelization Time: {watch.ElapsedMilliseconds} ms");
+			
 			var scriptableVoxelPath = EditorUtility.SaveFilePanelInProject("Save ScriptableVoxel", $"ScriptableVoxels.asset", "asset",
-				"Please enter a file name to save the voxel");
+				"Please enter a file name to save the voxel", _lastSavePath);
 			if (string.IsNullOrEmpty(scriptableVoxelPath)) return;
-			AssetDatabase.CreateAsset(scriptableVoxels, scriptableVoxelPath);
+			_lastSavePath = Directory.GetParent(scriptableVoxelPath)?.FullName;
+			AssetDatabase.CreateAsset(voxels, scriptableVoxelPath);
+		}
+
+		private void OnWizardOtherButton() {
+			Close();
 		}
 	}
 }

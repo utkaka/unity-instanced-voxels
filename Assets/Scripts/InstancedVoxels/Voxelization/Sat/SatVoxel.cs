@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace InstancedVoxels.Voxelization {
+namespace InstancedVoxels.Voxelization.Sat {
 	public struct SatVoxel {
 		public float3 VoxelCenter { get; }
 		public float Distance { get; }

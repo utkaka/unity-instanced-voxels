@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace InstancedVoxels.Voxelization {
+namespace InstancedVoxels.Voxelization.Colors {
 	public readonly struct TextureDescriptor {
 		public int StartIndex { get; }
 		private readonly int _width;

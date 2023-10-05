@@ -7,7 +7,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace InstancedVoxels.Voxelization {
+namespace InstancedVoxels.Voxelization.Sat {
 	[BurstCompile]
 	public struct SatVoxelizerJob : IJob {
 		private readonly float3 _boundsMin;
