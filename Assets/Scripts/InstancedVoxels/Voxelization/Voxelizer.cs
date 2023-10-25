@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using InstancedVoxels.MeshData;
 using InstancedVoxels.VoxelData;
+using InstancedVoxels.Voxelization.Bones;
 using InstancedVoxels.Voxelization.Colors;
 using InstancedVoxels.Voxelization.Compression;
 using InstancedVoxels.Voxelization.Sat;
@@ -56,9 +57,13 @@ namespace InstancedVoxels.Voxelization {
 			var calculateVoxelWeightsHandle = CalculateVoxelWeights(compressedVoxels.AsArray(), weightedVoxels, default);
 			
 			var voxelColors = new NativeArray<float3>(compressedVoxels.Length, Allocator.TempJob);
-			ReadVoxelColors(voxelColors, meshData, weightedVoxels, calculateVoxelWeightsHandle).Complete();
+			var readVoxelColorsHandle = ReadVoxelColors(voxelColors, meshData, weightedVoxels, calculateVoxelWeightsHandle);
+			
+			var voxelBones = new NativeArray<int>(compressedVoxels.Length, Allocator.TempJob);
+			var boneWeights = new NativeHashMap<int, float>(255 * 3, Allocator.TempJob);
+			ReadVoxelBones(voxelBones, meshData, weightedVoxels, boneWeights, readVoxelColorsHandle).Complete();
 
-			var voxels = Voxels.Create(_boxSize, _bounds.min, _voxelSize, voxelIndices, voxelColors);
+			var voxels = Voxels.Create(_boxSize, _bounds.min, _voxelSize, voxelIndices, voxelColors, voxelBones);
 				
 			meshData.Dispose();
 			satVoxels.Dispose();
@@ -66,6 +71,8 @@ namespace InstancedVoxels.Voxelization {
 			weightedVoxels.Dispose();
 			voxelIndices.Dispose();
 			voxelColors.Dispose();
+			voxelBones.Dispose();
+			boneWeights.Dispose();
 			
 			return voxels;
 		}
@@ -136,6 +143,19 @@ namespace InstancedVoxels.Voxelization {
 			var batchCount = boxSize / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
 			var read = new ReadVoxelColorJob(weightedVoxels, vertexUvReaders, textureDescriptors, textures, voxelColors);
 			return read.Schedule(boxSize, batchCount, jobDependency);
+		}
+
+		private JobHandle ReadVoxelBones(NativeArray<int> voxelBones, Mesh.MeshDataArray meshData,
+			NativeArray<WeightedVoxel> weightedVoxels, NativeHashMap<int, float> boneWeights, JobHandle jobDependency) {
+			var boxSize = voxelBones.Length;
+
+			var boneReaders = new NativeArray<VertexBonesReader>(meshData.Length, Allocator.TempJob);
+			for (var i = 0; i < meshData.Length; i++) {
+				boneReaders[i] = new VertexBonesReader(meshData[i]);
+			}
+			
+			var read = new ReadVoxelBoneJob(weightedVoxels, boneReaders, boneWeights, voxelBones);
+			return read.Schedule(boxSize, jobDependency);
 		}
 	}
 }

@@ -23,6 +23,7 @@ namespace Demo {
 				var boxSize = _voxels[m].BoxSize;
 				var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Colors, Allocator.Temp)).SliceConvert<float3>();
 				var indices = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Indices, Allocator.Temp)).SliceConvert<int>();
+				var bones = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Bones, Allocator.Temp)).SliceConvert<int>();
 				var voxelSize = _voxels[m].VoxelSize;
 				var startPosition = _voxels[m].StartPosition;
 				var boxIndex = 0;
@@ -37,12 +38,14 @@ namespace Demo {
 								boxIndex++;
 								continue;
 							}
-							var color = colors[colorIndex];
+							//var color = colors[colorIndex];
+							var bone = bones[colorIndex];
 							var voxel = new GameObject($"voxel-{i}-{j}-{k}", typeof(DemoVoxel)).GetComponent<DemoVoxel>();
 							var voxelTransform = voxel.transform;
 							voxelTransform.SetParent(transform);
 							voxelTransform.position = startPosition + (Vector3)(new float3(i, j, k) * voxelSize) + Vector3.one * voxelSize * 0.5f;
-							voxel.SetupVoxel(_prefab, color, voxelSize);
+							
+							voxel.SetupVoxel(_prefab, new float3((bone % 16) / 16.0f, (bone % 8) / 8.0f, (bone % 4) / 4.0f), voxelSize);
 							boxIndex++;
 							colorIndex++;
 						}
