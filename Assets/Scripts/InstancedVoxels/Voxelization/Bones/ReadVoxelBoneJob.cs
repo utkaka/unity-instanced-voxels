@@ -26,7 +26,8 @@ namespace InstancedVoxels.Voxelization.Bones {
 		public void Execute(int index) {
 			_boneWeights.Clear();
 			var weightedVoxel = _weightedVoxels[index];
-			var meshIndex = weightedVoxel.MeshIndex;
+			var meshIndex = weightedVoxel.MeshIndex - 1;
+			if (meshIndex < 0) return;
 			var bonesReader = _bonesReaders[meshIndex];
 
 			FillBoneWeights(bonesReader, weightedVoxel.VertexIndex0, weightedVoxel.VertexWeight0);

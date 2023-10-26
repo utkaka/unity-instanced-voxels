@@ -22,24 +22,29 @@ namespace Demo {
 				if (m == _voxels.Length) m = 0;
 				var boxSize = _voxels[m].BoxSize;
 				var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Colors, Allocator.Temp)).SliceConvert<float3>();
-				var indices = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Indices, Allocator.Temp)).SliceConvert<int>();
+				//var indices = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Indices, Allocator.Temp)).SliceConvert<int>();
 				var bones = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Bones, Allocator.Temp)).SliceConvert<int>();
 				var voxelSize = _voxels[m].VoxelSize;
 				var startPosition = _voxels[m].StartPosition;
 				var boxIndex = 0;
-				var colorIndex = 0;
+				//var colorIndex = 0;
 				for (var i = 0; i < boxSize.x; i++) {
 					for (var j = 0; j < boxSize.y; j++) {
 						for (var k = 0; k < boxSize.z; k++) {
-							if (colorIndex >= indices.Length) {
+							/*if (colorIndex >= indices.Length) {
 								break;
 							}
 							if (indices[colorIndex] != boxIndex) {
 								boxIndex++;
 								continue;
+							}*/
+							//TODO: temp solution, because of vertices compression is turned off
+							if (math.distance(colors[boxIndex], float3.zero) < float.Epsilon) {
+								boxIndex++;
+								continue;
 							}
 							//var color = colors[colorIndex];
-							var bone = bones[colorIndex];
+							var bone = bones[boxIndex];
 							var voxel = new GameObject($"voxel-{i}-{j}-{k}", typeof(DemoVoxel)).GetComponent<DemoVoxel>();
 							var voxelTransform = voxel.transform;
 							voxelTransform.SetParent(transform);
@@ -47,7 +52,6 @@ namespace Demo {
 							
 							voxel.SetupVoxel(_prefab, new float3((bone % 16) / 16.0f, (bone % 8) / 8.0f, (bone % 4) / 4.0f), voxelSize);
 							boxIndex++;
-							colorIndex++;
 						}
 					}
 				}

@@ -12,8 +12,8 @@ namespace InstancedVoxels.VoxelData {
 		private Vector3 _startPosition;
 		[SerializeField]
 		private float _voxelSize;
-		[SerializeField, HideInInspector]
-		private byte[] _indices;
+		/*[SerializeField, HideInInspector]
+		private byte[] _indices;*/
 		[SerializeField, HideInInspector]
 		private byte[] _colors;
 		[SerializeField, HideInInspector]
@@ -25,29 +25,29 @@ namespace InstancedVoxels.VoxelData {
 
 		public float VoxelSize => _voxelSize;
 
-		public byte[] Indices => _indices;
+		//public byte[] Indices => _indices;
 
 		public byte[] Colors => _colors;
 		
 		public byte[] Bones => _bones;
 		
-		public static Voxels Create(int3 boxSize, Vector3 startPosition, float voxelSize, NativeArray<int> indices, NativeArray<float3> colors, NativeArray<int> bones) {
+		public static Voxels Create(int3 boxSize, Vector3 startPosition, float voxelSize, /*NativeArray<int> indices, */NativeArray<float3> colors, NativeArray<int> bones) {
 			var instance = CreateInstance<Voxels>();
 			instance._boxSize = boxSize;
 			instance._startPosition = startPosition;
 			instance._voxelSize = voxelSize;
 			
-			var indicesBytes = new byte[indices.Length * sizeof(int)];
+			/*var indicesBytes = new byte[indices.Length * sizeof(int)];
 			var indexSlice  = new NativeSlice<int>(indices).SliceConvert<byte>();
 			indexSlice.CopyTo(indicesBytes);
-			instance._indices = indicesBytes;
+			instance._indices = indicesBytes;*/
 			
-			var colorsBytes = new byte[indices.Length * sizeof(float) * 3];
+			var colorsBytes = new byte[colors.Length * sizeof(float) * 3];
 			var colorSlice  = new NativeSlice<float3>(colors).SliceConvert<byte>();
 			colorSlice.CopyTo(colorsBytes);
 			instance._colors = colorsBytes;
 			
-			var bonesBytes = new byte[indices.Length * sizeof(int)];
+			var bonesBytes = new byte[bones.Length * sizeof(int)];
 			var bonesSlice  = new NativeSlice<int>(bones).SliceConvert<byte>();
 			bonesSlice.CopyTo(bonesBytes);
 			instance._bones = bonesBytes;

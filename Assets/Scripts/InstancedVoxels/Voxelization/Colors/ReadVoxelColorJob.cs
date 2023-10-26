@@ -32,7 +32,8 @@ namespace InstancedVoxels.Voxelization.Colors {
 
 		public void Execute(int index) {
 			var weightedVoxel = _weightedVoxels[index];
-			var meshIndex = weightedVoxel.MeshIndex;
+			var meshIndex = weightedVoxel.MeshIndex - 1;
+			if (meshIndex < 0) return;
 			var uvReader = _vertexUVReaders[meshIndex];
 			var uv0 = uvReader.GetVertexUV(weightedVoxel.VertexIndex0);
 			var uv1 = uvReader.GetVertexUV(weightedVoxel.VertexIndex1);
