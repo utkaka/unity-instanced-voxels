@@ -4,6 +4,7 @@ using InstancedVoxels.VoxelData;
 using InstancedVoxels.Voxelization.Bones;
 using InstancedVoxels.Voxelization.Colors;
 using InstancedVoxels.Voxelization.Compression;
+using InstancedVoxels.Voxelization.OuterVoxels;
 using InstancedVoxels.Voxelization.Sat;
 using InstancedVoxels.Voxelization.Weights;
 using Unity.Collections;
@@ -15,13 +16,12 @@ namespace InstancedVoxels.Voxelization {
 	public class Voxelizer {
 		private Bounds _bounds;
 		private readonly Mesh[] _meshes;
-		private readonly int3 _boxSize;
-		private readonly int _totalVoxelsCount;
+		private readonly VoxelsBox _box;
 		private readonly float _voxelSize;
 		private readonly Texture2D[] _textures;
 		private readonly Vector3[] _positions;
 
-		public int3 BoxSize => _boxSize;
+		public VoxelsBox Box => _box;
 
 		public Bounds Bounds => _bounds;
 
@@ -36,16 +36,15 @@ namespace InstancedVoxels.Voxelization {
 				_bounds.Encapsulate(bounds);
 			}
 
-			_boxSize = new int3((int)(_bounds.size.x / _voxelSize) + 3, (int)(_bounds.size.y / _voxelSize) + 3,
-				(int)(_bounds.size.z / _voxelSize) + 3);
-			_totalVoxelsCount = _boxSize.y * _boxSize.z * _boxSize.z;
+			_box = new VoxelsBox(new int3((int)(_bounds.size.x / _voxelSize) + 3, (int)(_bounds.size.y / _voxelSize) + 3,
+				(int)(_bounds.size.z / _voxelSize) + 3));
 			_meshes = meshes;
 			_textures = textures;
 		}
 
 		public Voxels Voxelize() {
 			var meshData = Mesh.AcquireReadOnlyMeshData(_meshes);
-			var satVoxels = new NativeArray<SatVoxel>(_totalVoxelsCount, Allocator.TempJob);
+			var satVoxels = new NativeArray<SatVoxel>(_box.Count, Allocator.TempJob);
 			var createVoxelsHandle = CreateSatVoxels(meshData, satVoxels);
 			
 			/*var compressedVoxels = new NativeList<CompressedVoxel>(_totalVoxelsCount, Allocator.TempJob);
@@ -53,17 +52,29 @@ namespace InstancedVoxels.Voxelization {
 			var compressVoxelsHandle = CompressSatVoxels(satVoxels, compressedVoxels, voxelIndices, createVoxelsHandle);
 			compressVoxelsHandle.Complete();*/
 			
-			var weightedVoxels = new NativeArray<WeightedVoxel>(_totalVoxelsCount, Allocator.TempJob);
+			var weightedVoxels = new NativeArray<WeightedVoxel>(_box.Count, Allocator.TempJob);
 			var calculateVoxelWeightsHandle = CalculateVoxelWeights(satVoxels, weightedVoxels, createVoxelsHandle);
 			
-			var voxelColors = new NativeArray<float3>(_totalVoxelsCount, Allocator.TempJob);
+			var voxelColors = new NativeArray<float3>(_box.Count, Allocator.TempJob);
 			var readVoxelColorsHandle = ReadVoxelColors(voxelColors, meshData, weightedVoxels, calculateVoxelWeightsHandle);
 			
-			var voxelBones = new NativeArray<int>(_totalVoxelsCount, Allocator.TempJob);
+			var voxelBones = new NativeArray<int>(_box.Count, Allocator.TempJob);
 			var boneWeights = new NativeHashMap<int, float>(255 * 3, Allocator.TempJob);
-			ReadVoxelBones(voxelBones, meshData, weightedVoxels, boneWeights, readVoxelColorsHandle).Complete();
-
-			var voxels = Voxels.Create(_boxSize, _bounds.min, _voxelSize, /*voxelIndices, */voxelColors, voxelBones);
+			var readVoxelBonessHandle = ReadVoxelBones(voxelBones, meshData, weightedVoxels, boneWeights, calculateVoxelWeightsHandle);
+			
+			var outerVoxels = new NativeArray<bool>(_box.Count, Allocator.TempJob);
+			var outerVoxelsQueue = new NativeQueue<int3>(Allocator.TempJob);
+			var findOuterVoxelsHandle = FindOuterVoxels(outerVoxels, weightedVoxels, outerVoxelsQueue, calculateVoxelWeightsHandle);
+			
+			JobHandle.CombineDependencies(readVoxelColorsHandle, readVoxelBonessHandle, findOuterVoxelsHandle).Complete();
+			
+			/*var outerVoxels = new bool[3,3,3];
+			var outerVoxelsNative = new bool[3*3*3];
+			Array.Copy(outerVoxels, outerVoxelsNative, 3*3*3);*/
+			
+			
+			
+			var voxels = Voxels.Create(_box, _bounds.min, _voxelSize, /*voxelIndices, */voxelColors, voxelBones);
 				
 			meshData.Dispose();
 			satVoxels.Dispose();
@@ -73,6 +84,8 @@ namespace InstancedVoxels.Voxelization {
 			voxelColors.Dispose();
 			voxelBones.Dispose();
 			boneWeights.Dispose();
+			outerVoxels.Dispose();
+			outerVoxelsQueue.Dispose();
 			
 			return voxels;
 		}
@@ -83,7 +96,7 @@ namespace InstancedVoxels.Voxelization {
 				meshDataPositions[i] = _positions[i];
 			}
 			
-			var satVoxelizerJob = new SatVoxelizerJob(_bounds.min, _boxSize, _voxelSize, meshData, meshDataPositions, satVoxels);
+			var satVoxelizerJob = new SatVoxelizerJob(_bounds.min, _box, _voxelSize, meshData, meshDataPositions, satVoxels);
 			return satVoxelizerJob.Schedule();
 		}
 		
@@ -156,6 +169,12 @@ namespace InstancedVoxels.Voxelization {
 			
 			var read = new ReadVoxelBoneJob(weightedVoxels, boneReaders, boneWeights, voxelBones);
 			return read.Schedule(boxSize, jobDependency);
+		}
+
+		private JobHandle FindOuterVoxels(NativeArray<bool> outerVoxels, NativeArray<WeightedVoxel> weightedVoxels, NativeQueue<int3> outerVoxelsQueue,
+			JobHandle jobDependency) {
+			var job = new FindOuterVoxelsJob(_box, weightedVoxels, outerVoxelsQueue, outerVoxels);
+			return job.Schedule(jobDependency);
 		}
 	}
 }

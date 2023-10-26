@@ -20,7 +20,7 @@ namespace Demo {
 			var m = 0;
 			while (true) {
 				if (m == _voxels.Length) m = 0;
-				var boxSize = _voxels[m].BoxSize;
+				var boxSize = _voxels[m].Box.Size;
 				var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Colors, Allocator.Temp)).SliceConvert<float3>();
 				//var indices = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Indices, Allocator.Temp)).SliceConvert<int>();
 				var bones = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Bones, Allocator.Temp)).SliceConvert<int>();

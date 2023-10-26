@@ -7,7 +7,7 @@ namespace InstancedVoxels.VoxelData {
 	[Serializable]
 	public class Voxels : ScriptableObject {
 		[SerializeField]
-		private int3 _boxSize;
+		private VoxelsBox _box;
 		[SerializeField]
 		private Vector3 _startPosition;
 		[SerializeField]
@@ -19,7 +19,7 @@ namespace InstancedVoxels.VoxelData {
 		[SerializeField, HideInInspector]
 		private byte[] _bones;
 
-		public int3 BoxSize => _boxSize;
+		public VoxelsBox Box => _box;
 
 		public Vector3 StartPosition => _startPosition;
 
@@ -31,9 +31,9 @@ namespace InstancedVoxels.VoxelData {
 		
 		public byte[] Bones => _bones;
 		
-		public static Voxels Create(int3 boxSize, Vector3 startPosition, float voxelSize, /*NativeArray<int> indices, */NativeArray<float3> colors, NativeArray<int> bones) {
+		public static Voxels Create(VoxelsBox box, Vector3 startPosition, float voxelSize, /*NativeArray<int> indices, */NativeArray<float3> colors, NativeArray<int> bones) {
 			var instance = CreateInstance<Voxels>();
-			instance._boxSize = boxSize;
+			instance._box = box;
 			instance._startPosition = startPosition;
 			instance._voxelSize = voxelSize;
 			

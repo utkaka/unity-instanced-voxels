@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using InstancedVoxels.MeshData;
+using InstancedVoxels.VoxelData;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -11,8 +12,7 @@ namespace InstancedVoxels.Voxelization.Sat {
 	[BurstCompile]
 	public struct SatVoxelizerJob : IJob {
 		private readonly float3 _boundsMin;
-		private readonly int3 _boxSize;
-		private readonly int _boxSizeYByZ;
+		private readonly VoxelsBox _box;
 		private readonly float _voxelSize;
 		private readonly float _halfVoxelSize;
 		private readonly float3 _halfVoxel;
@@ -22,10 +22,9 @@ namespace InstancedVoxels.Voxelization.Sat {
 		private readonly NativeArray<float3> _meshPositions;
 		private NativeArray<SatVoxel> _voxels;
 
-		public SatVoxelizerJob(float3 boundsMin, int3 boxSize, float voxelSize, Mesh.MeshDataArray meshDataArray, NativeArray<float3> meshPositions, NativeArray<SatVoxel> voxels) : this() {
+		public SatVoxelizerJob(float3 boundsMin, VoxelsBox box, float voxelSize, Mesh.MeshDataArray meshDataArray, NativeArray<float3> meshPositions, NativeArray<SatVoxel> voxels) : this() {
 			_boundsMin = boundsMin;
-			_boxSize = boxSize;
-			_boxSizeYByZ = boxSize.y * boxSize.z;
+			_box = box;
 			_voxelSize = voxelSize;
 			_halfVoxelSize = _voxelSize / 2.0f;
 			_halfVoxel = new float3(_halfVoxelSize, _halfVoxelSize, _halfVoxelSize);
@@ -90,7 +89,7 @@ namespace InstancedVoxels.Voxelization.Sat {
 					for (var n = minCell.z; n <= maxCell.z; n++) {
 						var voxelCenter = new float3(_voxelSize * k, _voxelSize * m, _voxelSize * n) +
 						                  _boundsMin + _halfVoxel;
-						var voxelIndex = (k + 1) * _boxSizeYByZ + (m + 1) * _boxSize.z + n + 1;
+						var voxelIndex = (k + 1) * _box.SizeYByZ + (m + 1) * _box.Size.z + n + 1;
 						var existingVoxel = _voxels[voxelIndex];
 						var d0 = math.distancesq(p0, voxelCenter);;
 						var d1 = math.distancesq(p1, voxelCenter);;
