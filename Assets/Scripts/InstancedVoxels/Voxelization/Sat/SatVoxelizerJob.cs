@@ -90,7 +90,7 @@ namespace InstancedVoxels.Voxelization.Sat {
 					for (var n = minCell.z; n <= maxCell.z; n++) {
 						var voxelCenter = new float3(_voxelSize * k, _voxelSize * m, _voxelSize * n) +
 						                  _boundsMin + _halfVoxel;
-						var voxelIndex = k * _boxSizeYByZ + m * _boxSize.z + n;
+						var voxelIndex = (k + 1) * _boxSizeYByZ + (m + 1) * _boxSize.z + n + 1;
 						var existingVoxel = _voxels[voxelIndex];
 						var d0 = math.distancesq(p0, voxelCenter);;
 						var d1 = math.distancesq(p1, voxelCenter);;

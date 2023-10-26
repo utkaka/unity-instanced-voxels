@@ -36,8 +36,8 @@ namespace InstancedVoxels.Voxelization {
 				_bounds.Encapsulate(bounds);
 			}
 
-			_boxSize = new int3((int)(_bounds.size.x / _voxelSize) + 1, (int)(_bounds.size.y / _voxelSize) + 1,
-				(int)(_bounds.size.z / _voxelSize) + 1);
+			_boxSize = new int3((int)(_bounds.size.x / _voxelSize) + 3, (int)(_bounds.size.y / _voxelSize) + 3,
+				(int)(_bounds.size.z / _voxelSize) + 3);
 			_totalVoxelsCount = _boxSize.y * _boxSize.z * _boxSize.z;
 			_meshes = meshes;
 			_textures = textures;
