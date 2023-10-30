@@ -38,11 +38,17 @@ namespace Demo {
 								boxIndex++;
 								continue;
 							}*/
-							//TODO: temp solution, because of vertices compression is turned off
-							if (math.distance(colors[boxIndex], float3.zero) < float.Epsilon) {
+							
+							if (i > boxSize.x / 2) {
 								boxIndex++;
 								continue;
 							}
+							
+							//TODO: temp solution, because of vertices compression is turned off
+							/*if (math.distance(colors[boxIndex], float3.zero) < float.Epsilon) {
+								boxIndex++;
+								continue;
+							}*/
 							//var color = colors[colorIndex];
 							var bone = bones[boxIndex];
 							var voxel = new GameObject($"voxel-{i}-{j}-{k}", typeof(DemoVoxel)).GetComponent<DemoVoxel>();

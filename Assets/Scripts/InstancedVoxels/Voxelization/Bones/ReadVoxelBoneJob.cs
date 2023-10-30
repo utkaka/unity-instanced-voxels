@@ -3,6 +3,7 @@ using InstancedVoxels.Voxelization.Weights;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace InstancedVoxels.Voxelization.Bones {
 	[BurstCompile]
@@ -15,12 +16,15 @@ namespace InstancedVoxels.Voxelization.Bones {
 		private NativeHashMap<int, float> _boneWeights;
 		[WriteOnly]
 		private NativeArray<int> _voxelBones;
+		private NativeArray<int> _maxBoneIndex;
 
-		public ReadVoxelBoneJob(NativeArray<WeightedVoxel> weightedVoxels, NativeArray<VertexBonesReader> bonesReaders, NativeHashMap<int, float> boneWeights, NativeArray<int> voxelBones) {
+		public ReadVoxelBoneJob(NativeArray<WeightedVoxel> weightedVoxels, NativeArray<VertexBonesReader> bonesReaders,
+			NativeHashMap<int, float> boneWeights, NativeArray<int> voxelBones, NativeArray<int> maxBoneIndex) {
 			_weightedVoxels = weightedVoxels;
 			_bonesReaders = bonesReaders;
 			_boneWeights = boneWeights;
 			_voxelBones = voxelBones;
+			_maxBoneIndex = maxBoneIndex;
 		}
 
 		public void Execute(int index) {
@@ -42,6 +46,7 @@ namespace InstancedVoxels.Voxelization.Bones {
 				maxBoneIndex = bone.Key;
 			}
 
+			_maxBoneIndex[0] = math.max(maxBoneIndex, _maxBoneIndex[0]);
 			_voxelBones[index] = maxBoneIndex;
 		}
 

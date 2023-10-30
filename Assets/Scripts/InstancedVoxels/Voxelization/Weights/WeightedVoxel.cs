@@ -21,5 +21,15 @@ namespace InstancedVoxels.Voxelization.Weights {
 			VertexWeight1 = vertexWeight1;
 			VertexWeight2 = vertexWeight2;
 		}
+		
+		public WeightedVoxel(WeightedVoxel weightedVoxel, int meshIndex) {
+			MeshIndex = meshIndex;
+			VertexIndex0 = weightedVoxel.VertexIndex0;
+			VertexIndex1 = weightedVoxel.VertexIndex1;
+			VertexIndex2 = weightedVoxel.VertexIndex2;
+			VertexWeight0 = weightedVoxel.VertexWeight0;
+			VertexWeight1 = weightedVoxel.VertexWeight1;
+			VertexWeight2 = weightedVoxel.VertexWeight2;
+		}
 	}
 }

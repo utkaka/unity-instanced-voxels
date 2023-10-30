@@ -59,14 +59,24 @@ namespace InstancedVoxels.Voxelization {
 			var readVoxelColorsHandle = ReadVoxelColors(voxelColors, meshData, weightedVoxels, calculateVoxelWeightsHandle);
 			
 			var voxelBones = new NativeArray<int>(_box.Count, Allocator.TempJob);
+			var maxBoneIndex = new NativeArray<int>(1, Allocator.TempJob);
 			var boneWeights = new NativeHashMap<int, float>(255 * 3, Allocator.TempJob);
-			var readVoxelBonessHandle = ReadVoxelBones(voxelBones, meshData, weightedVoxels, boneWeights, calculateVoxelWeightsHandle);
+			var readVoxelBonesHandle = ReadVoxelBones(voxelBones, meshData, weightedVoxels, boneWeights, maxBoneIndex,
+				calculateVoxelWeightsHandle);
 			
 			var outerVoxels = new NativeArray<bool>(_box.Count, Allocator.TempJob);
 			var outerVoxelsQueue = new NativeQueue<int3>(Allocator.TempJob);
 			var findOuterVoxelsHandle = FindOuterVoxels(outerVoxels, weightedVoxels, outerVoxelsQueue, calculateVoxelWeightsHandle);
 			
-			JobHandle.CombineDependencies(readVoxelColorsHandle, readVoxelBonessHandle, findOuterVoxelsHandle).Complete();
+			JobHandle.CombineDependencies(readVoxelColorsHandle, readVoxelBonesHandle, findOuterVoxelsHandle).Complete();
+
+			var boundsByBone =
+				new NativeHashMap<int2, VoxelsBounds>(maxBoneIndex[0] * meshData.Length, Allocator.TempJob);
+			var multiBoneVoxels = new NativeQueue<int>(Allocator.TempJob);
+			var neighbourBones = new NativeHashMap<int2, int>(6, Allocator.TempJob); 
+			var innerBonesJobHandle = FillInnerVoxelBone(weightedVoxels, voxelBones, outerVoxels, boundsByBone, multiBoneVoxels, neighbourBones, default);
+			
+			innerBonesJobHandle.Complete();
 			
 			/*var outerVoxels = new bool[3,3,3];
 			var outerVoxelsNative = new bool[3*3*3];
@@ -83,9 +93,13 @@ namespace InstancedVoxels.Voxelization {
 			//voxelIndices.Dispose();
 			voxelColors.Dispose();
 			voxelBones.Dispose();
+			maxBoneIndex.Dispose();
 			boneWeights.Dispose();
 			outerVoxels.Dispose();
 			outerVoxelsQueue.Dispose();
+			boundsByBone.Dispose();
+			multiBoneVoxels.Dispose();
+			neighbourBones.Dispose();
 			
 			return voxels;
 		}
@@ -159,21 +173,31 @@ namespace InstancedVoxels.Voxelization {
 		}
 
 		private JobHandle ReadVoxelBones(NativeArray<int> voxelBones, Mesh.MeshDataArray meshData,
-			NativeArray<WeightedVoxel> weightedVoxels, NativeHashMap<int, float> boneWeights, JobHandle jobDependency) {
+			NativeArray<WeightedVoxel> weightedVoxels, NativeHashMap<int, float> boneWeights,
+			NativeArray<int> maxBoneIndex, JobHandle jobDependency) {
 			var boxSize = voxelBones.Length;
 
 			var boneReaders = new NativeArray<VertexBonesReader>(meshData.Length, Allocator.TempJob);
 			for (var i = 0; i < meshData.Length; i++) {
 				boneReaders[i] = new VertexBonesReader(meshData[i]);
 			}
-			
-			var read = new ReadVoxelBoneJob(weightedVoxels, boneReaders, boneWeights, voxelBones);
+
+			var read = new ReadVoxelBoneJob(weightedVoxels, boneReaders, boneWeights, voxelBones, maxBoneIndex);
 			return read.Schedule(boxSize, jobDependency);
 		}
 
-		private JobHandle FindOuterVoxels(NativeArray<bool> outerVoxels, NativeArray<WeightedVoxel> weightedVoxels, NativeQueue<int3> outerVoxelsQueue,
+		private JobHandle FindOuterVoxels(NativeArray<bool> outerVoxels, NativeArray<WeightedVoxel> weightedVoxels,
+			NativeQueue<int3> outerVoxelsQueue,
 			JobHandle jobDependency) {
 			var job = new FindOuterVoxelsJob(_box, weightedVoxels, outerVoxelsQueue, outerVoxels);
+			return job.Schedule(jobDependency);
+		}
+
+		private JobHandle FillInnerVoxelBone(NativeArray<WeightedVoxel> weightedVoxels,
+			NativeArray<int> voxelBones, NativeArray<bool> outerVoxels, NativeHashMap<int2, VoxelsBounds> boundsByBone,
+			NativeQueue<int> multiBoneVoxels, NativeHashMap<int2, int> neighbourBones, JobHandle jobDependency) {
+			var job = new FillInnerVoxelBoneJob(_box, weightedVoxels, voxelBones, outerVoxels, boundsByBone,
+				multiBoneVoxels, neighbourBones);
 			return job.Schedule(jobDependency);
 		}
 	}
