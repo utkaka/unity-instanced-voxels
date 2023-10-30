@@ -98,7 +98,8 @@ namespace InstancedVoxels.Voxelization.Bones {
 					maxBones = boneCount.Value;
 					maxBone = boneCount.Key;	
 				}
-				if (maxBones > 2 || totalBones == 6) {
+
+				if (maxBones >= 2 || totalBones >= 6) {
 					_weightedVoxels[voxel] = new WeightedVoxel(_weightedVoxels[voxel], maxBone.x);
 					_voxelBones[voxel] = maxBone.y;
 				} else {

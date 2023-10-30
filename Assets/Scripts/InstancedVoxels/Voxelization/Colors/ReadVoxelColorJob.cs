@@ -21,13 +21,18 @@ namespace InstancedVoxels.Voxelization.Colors {
 		private NativeArray<Color> _textures;
 		[WriteOnly]
 		private NativeArray<float3> _voxelColors;
+		[WriteOnly]
+		private NativeArray<bool> _voxelColored;
 
-		public ReadVoxelColorJob(NativeArray<WeightedVoxel> weightedVoxels, NativeArray<VertexUVReader> vertexUVReaders, NativeArray<TextureDescriptor> textureDescriptors, NativeArray<Color> textures, NativeArray<float3> voxelColors) {
+		public ReadVoxelColorJob(NativeArray<WeightedVoxel> weightedVoxels, NativeArray<VertexUVReader> vertexUVReaders,
+			NativeArray<TextureDescriptor> textureDescriptors, NativeArray<Color> textures,
+			NativeArray<float3> voxelColors, NativeArray<bool> voxelColored) {
 			_textureDescriptors = textureDescriptors;
 			_vertexUVReaders = vertexUVReaders;
 			_weightedVoxels = weightedVoxels;
 			_textures = textures;
 			_voxelColors = voxelColors;
+			_voxelColored = voxelColored;
 		}
 
 		public void Execute(int index) {
@@ -41,6 +46,7 @@ namespace InstancedVoxels.Voxelization.Colors {
 			var uv = uv0 * weightedVoxel.VertexWeight0 + uv1 * weightedVoxel.VertexWeight1 + uv2 * weightedVoxel.VertexWeight2;
 			var color = _textures[_textureDescriptors[meshIndex].GetUvIndex(uv)];
 			_voxelColors[index] = new float3(color.r, color.g, color.b);
+			_voxelColored[index] = true;
 		}
 	}
 }

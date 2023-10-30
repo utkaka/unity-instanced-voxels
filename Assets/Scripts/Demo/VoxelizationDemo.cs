@@ -45,18 +45,19 @@ namespace Demo {
 							}
 							
 							//TODO: temp solution, because of vertices compression is turned off
-							/*if (math.distance(colors[boxIndex], float3.zero) < float.Epsilon) {
+							if (math.distance(colors[boxIndex], float3.zero) < float.Epsilon) {
 								boxIndex++;
 								continue;
-							}*/
-							//var color = colors[colorIndex];
+							}
+							var color = colors[boxIndex];
 							var bone = bones[boxIndex];
+							//var color = new float3((bone % 16) / 16.0f, (bone % 8) / 8.0f, (bone % 4) / 4.0f)
 							var voxel = new GameObject($"voxel-{i}-{j}-{k}", typeof(DemoVoxel)).GetComponent<DemoVoxel>();
 							var voxelTransform = voxel.transform;
 							voxelTransform.SetParent(transform);
 							voxelTransform.position = startPosition + (Vector3)(new float3(i - 1, j - 1, k - 1) * voxelSize) + Vector3.one * voxelSize * 0.5f;
 							
-							voxel.SetupVoxel(_prefab, new float3((bone % 16) / 16.0f, (bone % 8) / 8.0f, (bone % 4) / 4.0f), voxelSize);
+							voxel.SetupVoxel(_prefab, color, voxelSize);
 							boxIndex++;
 						}
 					}
