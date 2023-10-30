@@ -1,4 +1,5 @@
 using InstancedVoxels.MeshData;
+using InstancedVoxels.VoxelData;
 using InstancedVoxels.Voxelization.Compression;
 using InstancedVoxels.Voxelization.Sat;
 using InstancedVoxels.Voxelization.Weights;
@@ -18,15 +19,15 @@ namespace InstancedVoxels.Voxelization.Colors {
 		[ReadOnly, DeallocateOnJobCompletion]
 		private NativeArray<TextureDescriptor> _textureDescriptors;
 		[ReadOnly, DeallocateOnJobCompletion]
-		private NativeArray<Color> _textures;
+		private NativeArray<Color32> _textures;
 		[WriteOnly]
-		private NativeArray<float3> _voxelColors;
+		private NativeArray<VoxelColor32> _voxelColors;
 		[WriteOnly]
 		private NativeArray<bool> _voxelColored;
 
 		public ReadVoxelColorJob(NativeArray<WeightedVoxel> weightedVoxels, NativeArray<VertexUVReader> vertexUVReaders,
-			NativeArray<TextureDescriptor> textureDescriptors, NativeArray<Color> textures,
-			NativeArray<float3> voxelColors, NativeArray<bool> voxelColored) {
+			NativeArray<TextureDescriptor> textureDescriptors, NativeArray<Color32> textures,
+			NativeArray<VoxelColor32> voxelColors, NativeArray<bool> voxelColored) {
 			_textureDescriptors = textureDescriptors;
 			_vertexUVReaders = vertexUVReaders;
 			_weightedVoxels = weightedVoxels;
@@ -45,7 +46,7 @@ namespace InstancedVoxels.Voxelization.Colors {
 			var uv2 = uvReader.GetVertexUV(weightedVoxel.VertexIndex2);
 			var uv = uv0 * weightedVoxel.VertexWeight0 + uv1 * weightedVoxel.VertexWeight1 + uv2 * weightedVoxel.VertexWeight2;
 			var color = _textures[_textureDescriptors[meshIndex].GetUvIndex(uv)];
-			_voxelColors[index] = new float3(color.r, color.g, color.b);
+			_voxelColors[index] = new VoxelColor32(color.r, color.g, color.b);
 			_voxelColored[index] = true;
 		}
 	}

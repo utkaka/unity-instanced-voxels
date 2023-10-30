@@ -1,3 +1,4 @@
+using InstancedVoxels.VoxelData;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -10,13 +11,13 @@ namespace InstancedVoxels.Voxelization.Colors {
 		[ReadOnly]
 		private NativeArray<bool> _voxelColored;
 		[ReadOnly]
-		private NativeArray<float3> _innerColors;
+		private NativeArray<VoxelColor32> _innerColors;
 		[WriteOnly]
-		private NativeArray<float3> _voxelColors;
+		private NativeArray<VoxelColor32> _voxelColors;
 		private Random _random;
 
 		public FillInnerVoxelColorJob(int innerColorsCount, NativeArray<bool> outerVoxels, NativeArray<bool> voxelColored,
-			NativeArray<float3> innerColors, NativeArray<float3> voxelColors, Random random) {
+			NativeArray<VoxelColor32> innerColors, NativeArray<VoxelColor32> voxelColors, Random random) {
 			_outerVoxels = outerVoxels;
 			_innerColorsCount = innerColorsCount;
 			_voxelColored = voxelColored;

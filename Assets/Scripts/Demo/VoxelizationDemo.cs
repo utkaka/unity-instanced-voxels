@@ -21,7 +21,7 @@ namespace Demo {
 			while (true) {
 				if (m == _voxels.Length) m = 0;
 				var boxSize = _voxels[m].Box.Size;
-				var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Colors, Allocator.Temp)).SliceConvert<float3>();
+				var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Colors, Allocator.Temp)).SliceConvert<VoxelColor32>();
 				//var indices = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Indices, Allocator.Temp)).SliceConvert<int>();
 				var bones = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Bones, Allocator.Temp)).SliceConvert<int>();
 				var voxelSize = _voxels[m].VoxelSize;
@@ -44,12 +44,12 @@ namespace Demo {
 								continue;
 							}
 							
+							var color = colors[boxIndex];
 							//TODO: temp solution, because of vertices compression is turned off
-							if (math.distance(colors[boxIndex], float3.zero) < float.Epsilon) {
+							if (color is {r: 0, g: 0, b: 0}) {
 								boxIndex++;
 								continue;
 							}
-							var color = colors[boxIndex];
 							var bone = bones[boxIndex];
 							//var color = new float3((bone % 16) / 16.0f, (bone % 8) / 8.0f, (bone % 4) / 4.0f)
 							var voxel = new GameObject($"voxel-{i}-{j}-{k}", typeof(DemoVoxel)).GetComponent<DemoVoxel>();

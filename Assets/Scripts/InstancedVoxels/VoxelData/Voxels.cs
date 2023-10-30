@@ -31,7 +31,7 @@ namespace InstancedVoxels.VoxelData {
 		
 		public byte[] Bones => _bones;
 		
-		public static Voxels Create(VoxelsBox box, Vector3 startPosition, float voxelSize, /*NativeArray<int> indices, */NativeArray<float3> colors, NativeArray<int> bones) {
+		public static Voxels Create(VoxelsBox box, Vector3 startPosition, float voxelSize, /*NativeArray<int> indices, */NativeArray<VoxelColor32> colors, NativeArray<int> bones) {
 			var instance = CreateInstance<Voxels>();
 			instance._box = box;
 			instance._startPosition = startPosition;
@@ -42,8 +42,8 @@ namespace InstancedVoxels.VoxelData {
 			indexSlice.CopyTo(indicesBytes);
 			instance._indices = indicesBytes;*/
 			
-			var colorsBytes = new byte[colors.Length * sizeof(float) * 3];
-			var colorSlice  = new NativeSlice<float3>(colors).SliceConvert<byte>();
+			var colorsBytes = new byte[colors.Length * sizeof(byte) * 3];
+			var colorSlice  = new NativeSlice<VoxelColor32>(colors).SliceConvert<byte>();
 			colorSlice.CopyTo(colorsBytes);
 			instance._colors = colorsBytes;
 			

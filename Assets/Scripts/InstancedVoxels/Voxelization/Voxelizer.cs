@@ -56,7 +56,7 @@ namespace InstancedVoxels.Voxelization {
 			var weightedVoxels = new NativeArray<WeightedVoxel>(_box.Count, Allocator.TempJob);
 			var calculateVoxelWeightsHandle = CalculateVoxelWeights(satVoxels, weightedVoxels, createVoxelsHandle);
 			
-			var voxelColors = new NativeArray<float3>(_box.Count, Allocator.TempJob);
+			var voxelColors = new NativeArray<VoxelColor32>(_box.Count, Allocator.TempJob);
 			var voxelColored = new NativeArray<bool>(_box.Count, Allocator.TempJob);
 			var readVoxelColorsHandle = ReadVoxelColors(voxelColors, voxelColored, meshData, weightedVoxels, calculateVoxelWeightsHandle);
 			
@@ -83,7 +83,7 @@ namespace InstancedVoxels.Voxelization {
 			var fillInnerBorderVoxelColorJobHandle = FillInnerBorderVoxelColor(weightedVoxels, outerVoxels, voxelBones,
 				voxelColored, voxelColors, borderVoxelsQueue, innerBonesJobHandle);
 
-			var innerColors = new NativeArray<float3>(new[] {new float3(1.0f, 0.0f, 0.0f)}, Allocator.TempJob);
+			var innerColors = new NativeArray<VoxelColor32>(new[] {new VoxelColor32(255, 0, 0)}, Allocator.TempJob);
 			var fillInnerVoxelColorJobHandle = FillInnerVoxelColor(outerVoxels, voxelColored, innerColors, voxelColors,
 				fillInnerBorderVoxelColorJobHandle);
 			
@@ -139,7 +139,7 @@ namespace InstancedVoxels.Voxelization {
 			return weightsJob.Schedule(compressedVoxels.Length, batchCount, jobDependency);
 		}
 
-		private JobHandle ReadVoxelColors(NativeArray<float3> voxelColors, NativeArray<bool> voxelColored, Mesh.MeshDataArray meshData,
+		private JobHandle ReadVoxelColors(NativeArray<VoxelColor32> voxelColors, NativeArray<bool> voxelColored, Mesh.MeshDataArray meshData,
 			NativeArray<WeightedVoxel> weightedVoxels, JobHandle jobDependency) {
 			var boxSize = voxelColors.Length;
 			var whiteTexture = new Texture2D(1, 1, TextureFormat.RGBA32, false);
@@ -167,7 +167,7 @@ namespace InstancedVoxels.Voxelization {
 			var vertexUvReaders = new NativeArray<VertexUVReader>(meshData.Length, Allocator.TempJob,
 				NativeArrayOptions.UninitializedMemory);
 			var textures =
-				new NativeArray<Color>(texturesSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+				new NativeArray<Color32>(texturesSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
 			for (var i = 0; i < _textures.Length; i++) {
 				var texture = _textures[i];
@@ -177,8 +177,8 @@ namespace InstancedVoxels.Voxelization {
 				vertexUvReaders[i] = new VertexUVReader(meshData[i]);
 				if (texturesCopied[texture]) continue;
 				texturesCopied[texture] = true;
-				var texturePixels = texture.GetPixels();
-				NativeArray<Color>.Copy(texturePixels, 0, textures, descriptor.StartIndex, texturePixels.Length);
+				var texturePixels = texture.GetPixels32();
+				NativeArray<Color32>.Copy(texturePixels, 0, textures, descriptor.StartIndex, texturePixels.Length);
 			}
 
 
@@ -219,14 +219,14 @@ namespace InstancedVoxels.Voxelization {
 
 		private JobHandle FillInnerBorderVoxelColor(NativeArray<WeightedVoxel> weightedVoxels,
 			NativeArray<bool> outerVoxels, NativeArray<int> voxelBones, NativeArray<bool> voxelColored,
-			NativeArray<float3> voxelColors, NativeQueue<int> borderVoxels, JobHandle jobDependency) {
+			NativeArray<VoxelColor32> voxelColors, NativeQueue<int> borderVoxels, JobHandle jobDependency) {
 			var job = new FillInnerBorderVoxelColorJob(_box, weightedVoxels, outerVoxels, voxelBones, voxelColored,
 				voxelColors, borderVoxels);
 			return job.Schedule(jobDependency);
 		}
 
-		private JobHandle FillInnerVoxelColor(NativeArray<bool> outerVoxels, NativeArray<bool> voxelColored, NativeArray<float3> innerColors,
-			NativeArray<float3> voxelColors, JobHandle jobDependency) {
+		private JobHandle FillInnerVoxelColor(NativeArray<bool> outerVoxels, NativeArray<bool> voxelColored, NativeArray<VoxelColor32> innerColors,
+			NativeArray<VoxelColor32> voxelColors, JobHandle jobDependency) {
 			var job = new FillInnerVoxelColorJob(innerColors.Length, outerVoxels, voxelColored, innerColors, voxelColors,
 				new Unity.Mathematics.Random((uint) Random.Range(1, int.MaxValue)));
 			var batchCount = _box.Count / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
