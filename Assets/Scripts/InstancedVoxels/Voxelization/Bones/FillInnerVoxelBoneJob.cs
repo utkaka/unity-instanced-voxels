@@ -109,7 +109,6 @@ namespace InstancedVoxels.Voxelization.Bones {
 		}
 
 		private void FillNeighbourBone(int index) {
-			if (_outerVoxels[index]) return;
 			var meshIndex = _weightedVoxels[index].MeshIndex;
 			if (meshIndex == 0) return;
 			var bone = new int2(meshIndex, _voxelBones[index]);

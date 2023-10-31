@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using InstancedVoxels.VoxelData;
 using InstancedVoxels.Voxelization;
 using UnityEditor;
 using UnityEngine;
@@ -39,7 +40,15 @@ namespace InstancedVoxels.Editor {
 				"Please enter a file name to save the voxel", _lastSavePath);
 			if (string.IsNullOrEmpty(scriptableVoxelPath)) return;
 			_lastSavePath = Directory.GetParent(scriptableVoxelPath)?.FullName;
-			AssetDatabase.CreateAsset(voxels, scriptableVoxelPath);
+			var oldAsset = AssetDatabase.LoadAssetAtPath<Voxels>(scriptableVoxelPath);
+			if (oldAsset == null) {
+				AssetDatabase.CreateAsset(voxels, scriptableVoxelPath);	
+			} else {
+				oldAsset.CopyFrom(voxels);
+				EditorUtility.SetDirty(oldAsset);
+				AssetDatabase.SaveAssetIfDirty(oldAsset);
+				DestroyImmediate(voxels);
+			}
 		}
 
 		private void OnWizardOtherButton() {
