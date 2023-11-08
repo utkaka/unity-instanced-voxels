@@ -21,15 +21,13 @@ namespace InstancedVoxels.Editor {
 
 		private void OnWizardCreate() {
 			_lastVoxelSize = _voxelSize;
-			var selectedObject = Selection.activeObject as GameObject;
-			if (selectedObject == null) return;
-			var meshFilters = selectedObject.GetComponentsInChildren<MeshFilter>();
-			var meshes = meshFilters.Select(f => f.sharedMesh).ToArray();
-			var positions = meshFilters.Select(f => f.transform.position).ToArray();
-			var textures = meshFilters
-				.Select(f => f.GetComponent<MeshRenderer>().sharedMaterial.mainTexture as Texture2D).ToArray();
+			var selectedObject = Selection.objects.OfType<GameObject>().ToArray();
+			var meshObjects = selectedObject.SelectMany(so => so.GetComponentsInChildren<MeshFilter>())
+				.Select(mf => mf.gameObject)
+				.Concat(selectedObject.SelectMany(so => so.GetComponentsInChildren<SkinnedMeshRenderer>())
+					.Select(sm => sm.gameObject));
 			
-			var satVoxelizer = new Voxelizer(_voxelSize, meshes, positions, textures);
+			var satVoxelizer = new Voxelizer(_voxelSize, meshObjects.ToArray());
 			var watch = new System.Diagnostics.Stopwatch();
 			watch.Start();
 			var voxels = satVoxelizer.Voxelize();

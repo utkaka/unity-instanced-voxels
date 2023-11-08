@@ -21,26 +21,66 @@ namespace InstancedVoxels.Voxelization {
 		private readonly float _voxelSize;
 		private readonly Texture2D[] _textures;
 		private readonly Vector3[] _positions;
+		private readonly Animation[] _animations;
+		private readonly Transform[][] _boneTransforms;
 
 		public VoxelsBox Box => _box;
 
 		public Bounds Bounds => _bounds;
 
-		public Voxelizer(float voxelSize, Mesh[] meshes, Vector3[] positions, Texture2D[] textures) {
+		public Voxelizer(float voxelSize, GameObject[] gameObjects) {
+			var meshCount = gameObjects.Length;
+			_positions = new Vector3[meshCount];
+			_meshes = new Mesh[meshCount];
+			_textures = new Texture2D[meshCount];
+			_animations = new Animation[meshCount];
+			_boneTransforms = new Transform[meshCount][];
+			PrepareData(gameObjects);
 			_voxelSize = voxelSize;
 			_bounds = new Bounds();
-			_positions = positions;
-			for (var i = 0; i < meshes.Length; i++) {
-				var mesh = meshes[i];
+			for (var i = 0; i < meshCount; i++) {
+				var mesh = _meshes[i];
 				var bounds = mesh.bounds;
-				bounds.center += positions[i];
+				bounds.center += _positions[i];
 				_bounds.Encapsulate(bounds);
 			}
-
 			_box = new VoxelsBox(new int3((int)(_bounds.size.x / _voxelSize) + 3, (int)(_bounds.size.y / _voxelSize) + 3,
 				(int)(_bounds.size.z / _voxelSize) + 3));
-			_meshes = meshes;
-			_textures = textures;
+		}
+
+		private void PrepareData(GameObject[] gameObjects) {
+			for (var i = 0; i < gameObjects.Length; i++) {
+				var gameObject = gameObjects[i];
+				_positions[i] = gameObject.transform.position;
+				var skinnedMesh = gameObject.GetComponent<SkinnedMeshRenderer>();
+				if (skinnedMesh != null) {
+					_textures[i] = skinnedMesh.sharedMaterial.mainTexture as Texture2D;
+					_boneTransforms[i] = skinnedMesh.bones;
+					var animation = gameObject.transform.parent != null
+						? gameObject.transform.parent.GetComponent<Animation>()
+						: null;
+					if (animation != null) {
+						_animations[i] = animation;
+						var bakedMesh = new Mesh();
+						var clip = animation.clip;
+						animation.Play(clip.name);
+						var animationState = animation[clip.name];
+						animationState.time = 0.0f;
+						animation.Sample();
+						skinnedMesh.BakeMesh(bakedMesh);
+						bakedMesh.boneWeights = skinnedMesh.sharedMesh.boneWeights;
+						_meshes[i] = bakedMesh;
+					} else {
+						_meshes[i] = skinnedMesh.sharedMesh;		
+					}
+					continue;
+				}
+				var meshFilter = gameObject.GetComponent<MeshFilter>();
+				if (meshFilter == null) continue;
+				_boneTransforms[i] = new[] {meshFilter.transform};
+;				_meshes[i] = meshFilter.sharedMesh;
+				_textures[i] = meshFilter.GetComponent<MeshRenderer>().sharedMaterial.mainTexture as Texture2D;
+			}
 		}
 
 		public Voxels Voxelize() {
@@ -104,8 +144,11 @@ namespace InstancedVoxels.Voxelization {
 				compressedVoxelsIndices, compressedVoxelsBones,
 				compressedVoxelsColors, compressBonesJobHandle);
 			compressVoxelsJobHandle.Complete();
+
+			var voxelsAnimation = BakeAnimation(compressedBones);
 			
-			var voxels = Voxels.Create(_box, _bounds.min, _voxelSize, compressedVoxelsIndices, compressedVoxelsColors, compressedVoxelsBones);
+			var voxels = Voxels.Create(_box, _bounds.min, _voxelSize, compressedVoxelsIndices, compressedVoxelsColors,
+				compressedVoxelsBones, voxelsAnimation);
 				
 			meshData.Dispose();
 			satVoxels.Dispose();
@@ -253,6 +296,59 @@ namespace InstancedVoxels.Voxelization {
 			NativeList<VoxelColor32> compressedColors, JobHandle jobDependency) {
 			var compressJob = new CompressVoxelsJob(outerVoxels, voxelBones, voxelColors, compressedIndices, compressedBones, compressedColors);
 			return compressJob.Schedule(_box.Count, jobDependency);
+		}
+		
+		private VoxelsAnimation BakeAnimation(NativeHashMap<int2, int> bonesMapping) {
+			var bonesCount = bonesMapping.Count();
+			
+			var initialPositions = new float3[bonesCount];
+			var initialRotations = new Quaternion[bonesCount];
+			foreach (var keyValue in bonesMapping) {
+				var meshIndex = keyValue.Key.x - 1;
+				var meshBones = _boneTransforms[meshIndex];
+				initialPositions[keyValue.Value] = meshBones[Mathf.Min(meshBones.Length - 1, keyValue.Key.y)].transform.position;
+				initialRotations[keyValue.Value] = meshBones[Mathf.Min(meshBones.Length - 1, keyValue.Key.y)].transform.rotation;
+			}
+
+			var maxClipLength = 0.0f;
+			var maxClipFramerate = 0.0f;
+
+			foreach (var animation in _animations) {
+				if (animation == null) continue;
+				maxClipLength = Mathf.Max(maxClipLength, animation.clip.length);
+				maxClipFramerate = Mathf.Max(maxClipFramerate, animation.clip.frameRate);
+				animation.Play();
+			}
+			
+			var animationLength = Mathf.RoundToInt(maxClipLength * maxClipFramerate);
+			var perFrameTime = maxClipLength / animationLength;
+			var sampleTime = 0.0f;
+			
+			var bonesPositions = new float3[bonesCount * animationLength];
+			var bonesRotations = new float4[bonesCount * animationLength];
+
+			for (var i = 0; i < animationLength; i++) {
+				foreach (var animation in _animations) {
+					if (animation == null) continue;
+					animation[animation.clip.name].time = sampleTime;
+					animation.Sample();
+				}
+				foreach (var keyValue in bonesMapping) {
+					var meshIndex = keyValue.Key.x - 1;
+					var meshBones = _boneTransforms[meshIndex];
+					bonesPositions[i + animationLength * keyValue.Value] =
+						(float3)meshBones[Mathf.Min(meshBones.Length - 1, keyValue.Key.y)].transform.position - initialPositions[keyValue.Value];
+					var rotation = (quaternion)(meshBones[Mathf.Min(meshBones.Length - 1, keyValue.Key.y)].transform.rotation *
+					                            Quaternion.Inverse(initialRotations[keyValue.Value]));
+					bonesRotations[i + animationLength * keyValue.Value] = rotation.value;
+				}
+
+				sampleTime += perFrameTime;
+			}
+			foreach (var animation in _animations) {
+				animation.Stop();
+			}
+			return new VoxelsAnimation(animationLength, maxClipFramerate, bonesCount, initialPositions, bonesPositions, bonesRotations);
 		}
 	}
 }

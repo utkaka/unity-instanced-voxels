@@ -1,11 +1,10 @@
 using System.Collections;
 using InstancedVoxels.VoxelData;
-using Unity.Mathematics;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace Demo {
-	public class DemoVoxel : MonoBehaviour{
+	public class DemoVoxel : MonoBehaviour {
 		public void SetupVoxel(GameObject prefab, VoxelColor32 color, float voxelSize) {
 			StartCoroutine(AnimationCoroutine(prefab, color, voxelSize));
 		}
