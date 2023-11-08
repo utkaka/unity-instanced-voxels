@@ -346,7 +346,7 @@ namespace InstancedVoxels.Voxelization {
 				sampleTime += perFrameTime;
 			}
 			foreach (var animation in _animations) {
-				animation.Stop();
+				animation?.Stop();
 			}
 			return new VoxelsAnimation(animationLength, maxClipFramerate, bonesCount, initialPositions, bonesPositions, bonesRotations);
 		}

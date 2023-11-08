@@ -39,7 +39,7 @@ namespace InstancedVoxels.Voxelization.Bones {
 			FillBoneWeights(bonesReader, weightedVoxel.VertexIndex2, weightedVoxel.VertexWeight2);
 			
 			var maxBoneWeight = float.MinValue;
-			var maxBoneIndex = -1;
+			var maxBoneIndex = 0;
 			foreach (var bone in _boneWeights) {
 				if (bone.Value <= maxBoneWeight) continue;
 				maxBoneWeight = bone.Value;

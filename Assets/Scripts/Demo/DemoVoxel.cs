@@ -13,9 +13,9 @@ namespace Demo {
 			var delay = Random.Range(0.2f, 2.0f);
 			yield return new WaitForSeconds(delay);
 			var cube = Instantiate(prefab, transform, false);
-			transform.localScale = voxelSize * Vector3.one;
 			var meshRenderer = cube.GetComponent<MeshRenderer>();
 			meshRenderer.material.color = new Color(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f);
+			transform.localScale = voxelSize * Vector3.one;
 			yield return new WaitForSeconds(Random.Range(3.0f, 4.0f));
 			Destroy(gameObject);
 		}
