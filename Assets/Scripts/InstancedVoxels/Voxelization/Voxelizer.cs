@@ -91,7 +91,7 @@ namespace InstancedVoxels.Voxelization {
 			var weightedVoxels = new NativeArray<WeightedVoxel>(_box.Count, Allocator.TempJob);
 			var calculateVoxelWeightsHandle = CalculateVoxelWeights(satVoxels, weightedVoxels, createVoxelsHandle);
 			
-			var voxelColors = new NativeArray<VoxelColor32>(_box.Count, Allocator.TempJob);
+			var voxelColors = new NativeArray<byte3>(_box.Count, Allocator.TempJob);
 			var voxelColored = new NativeArray<bool>(_box.Count, Allocator.TempJob);
 			var readVoxelColorsHandle = ReadVoxelColors(voxelColors, voxelColored, meshData, weightedVoxels, calculateVoxelWeightsHandle);
 			
@@ -118,43 +118,30 @@ namespace InstancedVoxels.Voxelization {
 			var fillInnerBorderVoxelColorJobHandle = FillInnerBorderVoxelColor(weightedVoxels, outerVoxels, voxelBones,
 				voxelColored, voxelColors, borderVoxelsQueue, innerBonesJobHandle);
 
-			var innerColors = new NativeArray<VoxelColor32>(new[] {new VoxelColor32(255, 0, 0)}, Allocator.TempJob);
+			var innerColors = new NativeArray<byte3>(new[] {new byte3(255, 0, 0)}, Allocator.TempJob);
 			var fillInnerVoxelColorJobHandle = FillInnerVoxelColor(outerVoxels, voxelColored, innerColors, voxelColors,
 				fillInnerBorderVoxelColorJobHandle);
-			
-			//fillInnerVoxelColorJobHandle.Complete();
-			
-			/*var outerVoxels = new bool[3,3,3];
-			var outerVoxelsNative = new bool[3*3*3];
-			Array.Copy(outerVoxels, outerVoxelsNative, 3*3*3);*/
-			
-			/*var compressedVoxels = new NativeList<CompressedVoxel>(_totalVoxelsCount, Allocator.TempJob);
-			var voxelIndices = new NativeList<int>(_totalVoxelsCount, Allocator.TempJob);
-			var compressVoxelsHandle = CompressSatVoxels(satVoxels, compressedVoxels, voxelIndices, createVoxelsHandle);
-			compressVoxelsHandle.Complete();*/
 
 			var compressedBones =
 				new NativeHashMap<int2, int>(maxBoneIndex[0] * meshData.Length, Allocator.TempJob);
 			var compressBonesJobHandle = CompressBones(weightedVoxels, outerVoxels, voxelBones, compressedBones, fillInnerVoxelColorJobHandle);
 			
-			var compressedVoxelsIndices = new NativeList<int>(_box.Count, Allocator.TempJob);
-			var compressedVoxelsBones = new NativeList<int>(_box.Count, Allocator.TempJob);
-			var compressedVoxelsColors = new NativeList<VoxelColor32>(_box.Count, Allocator.TempJob);
+			var compressedVoxelsPositions = new NativeList<byte3>(_box.Count, Allocator.TempJob);
+			var compressedVoxelsBones = new NativeList<byte>(_box.Count, Allocator.TempJob);
+			var compressedVoxelsColors = new NativeList<byte3>(_box.Count, Allocator.TempJob);
 			var compressVoxelsJobHandle = CompressVoxels(outerVoxels, voxelBones, voxelColors, 
-				compressedVoxelsIndices, compressedVoxelsBones,
+				compressedVoxelsPositions, compressedVoxelsBones,
 				compressedVoxelsColors, compressBonesJobHandle);
 			compressVoxelsJobHandle.Complete();
 
 			var voxelsAnimation = BakeAnimation(compressedBones);
 			
-			var voxels = Voxels.Create(_box, _bounds.min, _voxelSize, compressedVoxelsIndices, compressedVoxelsColors,
+			var voxels = Voxels.Create(_box, _bounds.min, _voxelSize, compressedVoxelsPositions, compressedVoxelsColors,
 				compressedVoxelsBones, voxelsAnimation);
 				
 			meshData.Dispose();
 			satVoxels.Dispose();
-			//compressedVoxels.Dispose();
 			weightedVoxels.Dispose();
-			//voxelIndices.Dispose();
 			voxelColors.Dispose();
 			voxelColored.Dispose();
 			voxelBones.Dispose();
@@ -168,7 +155,7 @@ namespace InstancedVoxels.Voxelization {
 			borderVoxelsQueue.Dispose();
 			innerColors.Dispose();
 			compressedBones.Dispose();
-			compressedVoxelsIndices.Dispose();
+			compressedVoxelsPositions.Dispose();
 			compressedVoxelsBones.Dispose();
 			compressedVoxelsColors.Dispose();
 			
@@ -191,7 +178,7 @@ namespace InstancedVoxels.Voxelization {
 			return weightsJob.Schedule(compressedVoxels.Length, batchCount, jobDependency);
 		}
 
-		private JobHandle ReadVoxelColors(NativeArray<VoxelColor32> voxelColors, NativeArray<bool> voxelColored, Mesh.MeshDataArray meshData,
+		private JobHandle ReadVoxelColors(NativeArray<byte3> voxelColors, NativeArray<bool> voxelColored, Mesh.MeshDataArray meshData,
 			NativeArray<WeightedVoxel> weightedVoxels, JobHandle jobDependency) {
 			var boxSize = voxelColors.Length;
 			var whiteTexture = new Texture2D(1, 1, TextureFormat.RGBA32, false);
@@ -271,14 +258,14 @@ namespace InstancedVoxels.Voxelization {
 
 		private JobHandle FillInnerBorderVoxelColor(NativeArray<WeightedVoxel> weightedVoxels,
 			NativeArray<bool> outerVoxels, NativeArray<int> voxelBones, NativeArray<bool> voxelColored,
-			NativeArray<VoxelColor32> voxelColors, NativeQueue<int> borderVoxels, JobHandle jobDependency) {
+			NativeArray<byte3> voxelColors, NativeQueue<int> borderVoxels, JobHandle jobDependency) {
 			var job = new FillInnerBorderVoxelColorJob(_box, weightedVoxels, outerVoxels, voxelBones, voxelColored,
 				voxelColors, borderVoxels);
 			return job.Schedule(jobDependency);
 		}
 
-		private JobHandle FillInnerVoxelColor(NativeArray<bool> outerVoxels, NativeArray<bool> voxelColored, NativeArray<VoxelColor32> innerColors,
-			NativeArray<VoxelColor32> voxelColors, JobHandle jobDependency) {
+		private JobHandle FillInnerVoxelColor(NativeArray<bool> outerVoxels, NativeArray<bool> voxelColored, NativeArray<byte3> innerColors,
+			NativeArray<byte3> voxelColors, JobHandle jobDependency) {
 			var job = new FillInnerVoxelColorJob(innerColors.Length, outerVoxels, voxelColored, innerColors, voxelColors,
 				new Unity.Mathematics.Random((uint) Random.Range(1, int.MaxValue)));
 			var batchCount = _box.Count / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
@@ -292,9 +279,10 @@ namespace InstancedVoxels.Voxelization {
 		}
 		
 		private JobHandle CompressVoxels(NativeArray<bool> outerVoxels, NativeArray<int> voxelBones,
-			NativeArray<VoxelColor32> voxelColors, NativeList<int> compressedIndices, NativeList<int> compressedBones,
-			NativeList<VoxelColor32> compressedColors, JobHandle jobDependency) {
-			var compressJob = new CompressVoxelsJob(outerVoxels, voxelBones, voxelColors, compressedIndices, compressedBones, compressedColors);
+			NativeArray<byte3> voxelColors, NativeList<byte3> compressedPositions, NativeList<byte> compressedBones,
+			NativeList<byte3> compressedColors, JobHandle jobDependency) {
+			var compressJob = new CompressVoxelsJob(_box, outerVoxels, voxelBones, voxelColors, compressedPositions,
+				compressedBones, compressedColors);
 			return compressJob.Schedule(_box.Count, jobDependency);
 		}
 		

@@ -21,20 +21,19 @@ namespace Demo {
 			var m = 0;
 			while (true) {
 				if (m == _voxels.Length) m = 0;
-				var box = _voxels[m].Box;
-				var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Colors, Allocator.Temp)).SliceConvert<VoxelColor32>();
-				var indices = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Indices, Allocator.Temp)).SliceConvert<int>();
+				var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Colors, Allocator.Temp)).SliceConvert<byte3>();
+				var positions = new NativeSlice<byte>(new NativeArray<byte>(_voxels[m].Indices, Allocator.Temp)).SliceConvert<byte3>();
 				var voxelSize = _voxels[m].VoxelSize;
 				var startPosition = _voxels[m].StartPosition;
 
-				var voxelsCount = indices.Length;
+				var voxelsCount = positions.Length;
 				for (var i = 0; i < voxelsCount; i++) {
-					var index = indices[i];
-					var position = box.GetVoxelPosition(index);
+					var bytePosition = positions[i];
+					var position = new Vector3(bytePosition.x, bytePosition.y, bytePosition.z);
 					var color = colors[i];
 					var voxel = new GameObject($"voxel-{position}", typeof(DemoVoxel)).GetComponent<DemoVoxel>();
 					var voxelTransform = voxel.transform;
-					voxelTransform.position = startPosition + (Vector3)((float3)position * voxelSize) - Vector3.one * voxelSize * 0.5f;
+					voxelTransform.position = startPosition + position * voxelSize - Vector3.one * (voxelSize * 0.5f);
 					voxelTransform.SetParent(transform, true);
 					voxel.SetupVoxel(_prefab, color, voxelSize);
 				}

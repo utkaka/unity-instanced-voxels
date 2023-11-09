@@ -18,7 +18,7 @@ namespace Demo {
 		private Transform[] _bones;
 
 		private AnimationState _animationState;
-		private NativeArray<byte> _indices;
+		private NativeArray<byte> _positions;
 
 		private void Start() {
 			_animationState = _animation[_animation.clip.name];
@@ -28,10 +28,10 @@ namespace Demo {
 
 		private IEnumerator AnimationCoroutine() {
 			var box = _voxels.Box;
-			var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels.Colors, Allocator.Temp)).SliceConvert<VoxelColor32>();
-			_indices = new NativeArray<byte>(_voxels.Indices, Allocator.Persistent);
-			var indicesSlice = new NativeSlice<byte>(_indices).SliceConvert<int>();
-			var bones = new NativeSlice<byte>(new NativeArray<byte>(_voxels.Bones, Allocator.Temp)).SliceConvert<int>();
+			var colors = new NativeSlice<byte>(new NativeArray<byte>(_voxels.Colors, Allocator.Temp)).SliceConvert<byte3>();
+			_positions = new NativeArray<byte>(_voxels.Indices, Allocator.Persistent);
+			var positionsSlice = new NativeSlice<byte>(_positions).SliceConvert<byte3>();
+			var bones = new NativeSlice<byte>(new NativeArray<byte>(_voxels.Bones, Allocator.Temp)).SliceConvert<byte>();
 			var voxelSize = _voxels.VoxelSize;
 			var startPosition = _voxels.StartPosition;
 		
@@ -44,16 +44,16 @@ namespace Demo {
 				_bones[i] = bone;
 			}
 
-			var voxelsCount = indicesSlice.Length;
+			var voxelsCount = positionsSlice.Length;
 			_demoVoxels = new AnimationDemoVoxel[voxelsCount];
 			for (var i = 0; i < voxelsCount; i++) {
-				var index = indicesSlice[i];
-				var position = box.GetVoxelPosition(index);
+				var bytePosition = positionsSlice[i];
+				var position = new Vector3(bytePosition.x, bytePosition.y, bytePosition.z);
 				var color = colors[i];
 				var bone = bones[i];
 				var voxel = new GameObject($"voxel-{position}", typeof(AnimationDemoVoxel)).GetComponent<AnimationDemoVoxel>();
 				var voxelTransform = voxel.transform;
-				voxelTransform.position = startPosition + (Vector3)((float3)position * voxelSize) - Vector3.one * voxelSize * 0.5f;
+				voxelTransform.position = startPosition + position * voxelSize - Vector3.one * (voxelSize * 0.5f);
 				voxelTransform.SetParent(_bones[bone], true);
 				voxel.SetupVoxel(_prefab, color, (float)bones[i] / _bones.Length, voxelSize);
 				_demoVoxels[i] = voxel;
@@ -61,8 +61,8 @@ namespace Demo {
 			yield return new WaitForSeconds(6.5f);
 			_animation.GetComponentInChildren<SkinnedMeshRenderer>().gameObject.SetActive(false);
 			for (var i = 0; i < voxelsCount; i++) {
-				var index = indicesSlice[i];
-				var position = box.GetVoxelPosition(index);
+				var bytePosition = positionsSlice[i];
+				var position = new Vector3(bytePosition.x, bytePosition.y, bytePosition.z);
 				if (position.x < box.Size.x / 2) continue;
 				_demoVoxels[i].DelayedActivation(false);
 			}
@@ -77,8 +77,8 @@ namespace Demo {
 			}
 			yield return new WaitForSeconds(1.5f);
 			for (var i = 0; i < voxelsCount; i++) {
-				var index = indicesSlice[i];
-				var position = box.GetVoxelPosition(index);
+				var bytePosition = positionsSlice[i];
+				var position = new Vector3(bytePosition.x, bytePosition.y, bytePosition.z);
 				if (position.x < box.Size.x / 2) continue;
 				_demoVoxels[i].DelayedActivation(true);
 			}
@@ -92,7 +92,7 @@ namespace Demo {
 		}
 
 		private void OnDestroy() {
-			_indices.Dispose();
+			_positions.Dispose();
 		}
 	}
 }

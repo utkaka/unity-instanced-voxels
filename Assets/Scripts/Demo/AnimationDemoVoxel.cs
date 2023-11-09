@@ -4,17 +4,17 @@ using UnityEngine;
 
 namespace Demo {
 	public class AnimationDemoVoxel : MonoBehaviour {
-		private VoxelColor32 _color;
+		private byte3 _color;
 		private GameObject _cube;
 		
-		public void SetupVoxel(GameObject prefab, VoxelColor32 color, float bone, float voxelSize) {
+		public void SetupVoxel(GameObject prefab, byte3 color, float bone, float voxelSize) {
 			_color = color;
 			StartCoroutine(AnimationCoroutine(prefab, bone, voxelSize));
 		}
 
-		private void SetColor(VoxelColor32 color) {
+		private void SetColor(byte3 color) {
 			var meshRenderer = _cube.GetComponent<MeshRenderer>();
-			meshRenderer.material.color = new Color(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f);
+			meshRenderer.material.color = new Color(color.x / 255.0f, color.y / 255.0f, color.z / 255.0f);
 		}
 		
 		public void DelayedColor() {
@@ -33,7 +33,7 @@ namespace Demo {
 			transform.localScale = voxelSize * Vector3.one;
 			yield return new WaitForSeconds(Random.Range(3.0f, 4.0f));
 			var boneColor = (byte)(bone * 0x255);
-			SetColor(new VoxelColor32(boneColor, boneColor, boneColor));
+			SetColor(new byte3(boneColor, boneColor, boneColor));
 		}
 
 		private IEnumerator ActivationCoroutine(bool active) {

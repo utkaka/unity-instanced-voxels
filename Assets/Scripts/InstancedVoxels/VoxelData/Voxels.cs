@@ -36,28 +36,25 @@ namespace InstancedVoxels.VoxelData {
 
 		public VoxelsAnimation Animation => _animation;
 
-		public static Voxels Create(VoxelsBox box, Vector3 startPosition, float voxelSize, NativeArray<int> indices,
-			NativeArray<VoxelColor32> colors, NativeArray<int> bones, VoxelsAnimation animation) {
+		public static Voxels Create(VoxelsBox box, Vector3 startPosition, float voxelSize, NativeArray<byte3> positions,
+			NativeArray<byte3> colors, NativeArray<byte> bones, VoxelsAnimation animation) {
 			var instance = CreateInstance<Voxels>();
 			instance._box = box;
 			instance._startPosition = startPosition;
 			instance._voxelSize = voxelSize;
 
-			var indicesBytes = new byte[indices.Length * sizeof(int)];
-			var indexSlice = new NativeSlice<int>(indices).SliceConvert<byte>();
+			var indicesBytes = new byte[positions.Length * sizeof(byte) * 3];
+			var indexSlice = new NativeSlice<byte3>(positions).SliceConvert<byte>();
 			indexSlice.CopyTo(indicesBytes);
 			instance._indices = indicesBytes;
 
 			var colorsBytes = new byte[colors.Length * sizeof(byte) * 3];
-			var colorSlice = new NativeSlice<VoxelColor32>(colors).SliceConvert<byte>();
+			var colorSlice = new NativeSlice<byte3>(colors).SliceConvert<byte>();
 			colorSlice.CopyTo(colorsBytes);
 			instance._colors = colorsBytes;
-
-			var bonesBytes = new byte[bones.Length * sizeof(int)];
-			var bonesSlice = new NativeSlice<int>(bones).SliceConvert<byte>();
-			bonesSlice.CopyTo(bonesBytes);
-			instance._bones = bonesBytes;
-
+			
+			instance._bones = bones.ToArray();
+			
 			instance._animation = animation;
 
 			return instance;

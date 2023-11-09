@@ -16,10 +16,10 @@ namespace InstancedVoxels.Voxelization.Colors {
 		[ReadOnly]
 		private NativeArray<int> _voxelBones;
 		private NativeArray<bool> _voxelColored;
-		private NativeArray<VoxelColor32> _voxelColors;
+		private NativeArray<byte3> _voxelColors;
 		private NativeQueue<int> _borderVoxels;
 
-		public FillInnerBorderVoxelColorJob(VoxelsBox box, NativeArray<WeightedVoxel> weightedVoxels, NativeArray<bool> outerVoxels, NativeArray<int> voxelBones, NativeArray<bool> voxelColored, NativeArray<VoxelColor32> voxelColors, NativeQueue<int> borderVoxels) {
+		public FillInnerBorderVoxelColorJob(VoxelsBox box, NativeArray<WeightedVoxel> weightedVoxels, NativeArray<bool> outerVoxels, NativeArray<int> voxelBones, NativeArray<bool> voxelColored, NativeArray<byte3> voxelColors, NativeQueue<int> borderVoxels) {
 			_box = box;
 			_weightedVoxels = weightedVoxels;
 			_outerVoxels = outerVoxels;
