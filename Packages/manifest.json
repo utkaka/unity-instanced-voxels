@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.unity.test-framework.performance": "3.0.3",
     "com.tayx.graphy": "3.0.2",
     "com.unity.collections": "1.2.4",
     "com.unity.feature.development": "1.0.1",

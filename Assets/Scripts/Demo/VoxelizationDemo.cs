@@ -1,5 +1,5 @@
 using System.Collections;
-using InstancedVoxels.VoxelData;
+using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;

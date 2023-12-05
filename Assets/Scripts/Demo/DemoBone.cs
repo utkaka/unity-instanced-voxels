@@ -1,4 +1,4 @@
-using InstancedVoxels.VoxelData;
+using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -17,10 +17,10 @@ namespace Demo {
 		}
 		
 		private void Update() {
-			var animationIndex = _animationState.normalizedTime % 1.0f * _animation.AnimationLength;
+			var animationIndex = _animationState.normalizedTime % 1.0f * _animation.FramesCount;
 			var lerpRatio = animationIndex - Mathf.Floor(animationIndex);
-			var nextAnimationIndex = (animationIndex + 1) % _animation.AnimationLength + _bone * _animation.AnimationLength;
-			animationIndex += _bone * _animation.AnimationLength;
+			var nextAnimationIndex = (animationIndex + 1) % _animation.FramesCount + _bone * _animation.FramesCount;
+			animationIndex += _bone * _animation.FramesCount;
 			var animationPosition = math.lerp(_animation.AnimationBonesPositions[(int) animationIndex],
 				_animation.AnimationBonesPositions[(int) nextAnimationIndex], lerpRatio);
 			var animationRotation = math.lerp(_animation.AnimationBonesRotations[(int) animationIndex],
