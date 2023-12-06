@@ -19,8 +19,7 @@ namespace com.utkaka.InstancedVoxels.Tests {
 				.GetComponent<GameObjectVoxelRenderer>();
 			
 			var voxels = Resources.Load<Voxels>($"Voxel_{voxelSize}");
-			var cube = Resources.Load<GameObject>($"Voxel");
-			renderer.Init(voxels, cube);
+			renderer.Init(voxels);
 			yield return Measure.Frames()
 				.WarmupCount(60)
 				.MeasurementCount(60)

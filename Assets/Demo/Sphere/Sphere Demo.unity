@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.4439372, g: 0.49315345, b: 0.5721989, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028326, g: 0.22571333, b: 0.30692202, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -164,14 +164,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 381476556}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4beb925fcbbea4a639d0f8ecd443048b, type: 3}
+  m_Script: {fileID: 11500000, guid: b68c191f6f2544b88db994f046f3772a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _voxels:
-  - {fileID: 11400000, guid: 6b339f69dc9af42f1954d32ac22ab5c2, type: 2}
-  - {fileID: 11400000, guid: f7a656e8685504d02adb8f6c7321625e, type: 2}
-  - {fileID: 11400000, guid: 6f7de31ac80324e11b0b0df3a18fa5e9, type: 2}
-  _prefab: {fileID: 3354481194547103551, guid: ba62633b5c403485d836ef0c8fa8f767, type: 3}
+  _voxels: {fileID: 11400000, guid: f7a656e8685504d02adb8f6c7321625e, type: 2}
 --- !u!1 &586840229
 GameObject:
   m_ObjectHideFlags: 0
@@ -506,8 +502,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 1
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Intensity: 1.5
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
