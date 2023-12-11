@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Temp/Spider/Spider Demo.unity
+    guid: 665a0c291b4874c6fa19971497761ccb
   m_configObjects: {}

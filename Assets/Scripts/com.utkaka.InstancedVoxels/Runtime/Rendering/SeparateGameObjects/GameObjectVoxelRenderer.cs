@@ -4,7 +4,7 @@ using Unity.Collections;
 using UnityEngine;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.SeparateGameObjects {
-	public class GameObjectVoxelRenderer : MonoBehaviour{
+	public class GameObjectVoxelRenderer : MonoBehaviour, IVoxelRenderer {
 		[SerializeField]
 		private Voxels _voxels;
 		private GameObjectBone[] _bones;

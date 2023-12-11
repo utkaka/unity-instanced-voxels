@@ -164,10 +164,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 381476556}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b68c191f6f2544b88db994f046f3772a, type: 3}
+  m_Script: {fileID: 11500000, guid: 59dee4fe14a2474288cee572145a39e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _voxels: {fileID: 11400000, guid: 47b632b6bbb1b4d9d91583da7a8c50ed, type: 2}
+  _voxels: {fileID: 11400000, guid: b2273ef9d7ba448ed862d19bf6e2f9b0, type: 2}
 --- !u!1 &586840229
 GameObject:
   m_ObjectHideFlags: 0
