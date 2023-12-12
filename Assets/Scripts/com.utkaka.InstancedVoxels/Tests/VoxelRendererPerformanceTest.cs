@@ -22,7 +22,7 @@ namespace com.utkaka.InstancedVoxels.Tests {
 			var renderer = new GameObject("Renderer", typeof(T))
 				.GetComponent<T>();
 			
-			var voxels = Resources.Load<Voxels>($"Voxel_{voxelSize}");
+			var voxels = Resources.Load<Voxels>($"Cube_{voxelSize}");
 			renderer.Init(voxels);
 			yield return Measure.Frames()
 				.WarmupCount(60)

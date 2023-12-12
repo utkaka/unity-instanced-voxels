@@ -11,6 +11,7 @@ namespace com.utkaka.InstancedVoxels.Tests {
 			yield return "004";
 			yield return "002";
 			yield return "001";
+			yield return "1_div_255";
 		}
 
 		[UnityTest, Performance]
