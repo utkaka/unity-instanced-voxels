@@ -11,11 +11,11 @@ using UnityEngine.Rendering;
 namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Sat {
 	[BurstCompile]
 	public struct SatVoxelizerJob : IJob {
-		private readonly float3 _boundsMin;
+		private readonly double3 _boundsMin;
 		private readonly VoxelsBox _box;
-		private readonly float _voxelSize;
-		private readonly float _halfVoxelSize;
-		private readonly float3 _halfVoxel;
+		private readonly double _voxelSize;
+		private readonly double _halfVoxelSize;
+		private readonly double3 _halfVoxel;
 		[ReadOnly]
 		private Mesh.MeshDataArray _meshDataArray;
 		[ReadOnly, DeallocateOnJobCompletion]
@@ -27,7 +27,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Sat {
 			_box = box;
 			_voxelSize = voxelSize;
 			_halfVoxelSize = _voxelSize / 2.0f;
-			_halfVoxel = new float3(_halfVoxelSize, _halfVoxelSize, _halfVoxelSize);
+			_halfVoxel = new double3(_halfVoxelSize, _halfVoxelSize, _halfVoxelSize);
 			_meshDataArray = meshDataArray;
 			_meshPositions = meshPositions;
 			_voxels = voxels;
@@ -72,7 +72,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Sat {
 			}
 		}
 
-		private void ProcessTriangle(int meshIndex, int i0, int i1, int i2, float3 p0, float3 p1, float3 p2) {
+		private void ProcessTriangle(int meshIndex, int i0, int i1, int i2, double3 p0, double3 p1, double3 p2) {
 			var cell0 = GetVertexPosition(p0 - _boundsMin, _voxelSize);
 			var cell1 = GetVertexPosition(p1 - _boundsMin, _voxelSize);
 			var cell2 = GetVertexPosition(p2 - _boundsMin, _voxelSize);
@@ -87,7 +87,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Sat {
 			for (var k = minCell.x; k <= maxCell.x; k++) {
 				for (var m = minCell.y; m <= maxCell.y; m++) {
 					for (var n = minCell.z; n <= maxCell.z; n++) {
-						var voxelCenter = new float3(_voxelSize * k, _voxelSize * m, _voxelSize * n) +
+						var voxelCenter = new double3(_voxelSize * k, _voxelSize * m, _voxelSize * n) +
 						                  _boundsMin + _halfVoxel;
 						var voxelIndex = (k + 1) * _box.SizeYByZ + (m + 1) * _box.Size.z + n + 1;
 						var existingVoxel = _voxels[voxelIndex];
@@ -96,14 +96,14 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Sat {
 						var d2 = math.distancesq(p2, voxelCenter);;
 						var distance = d0 + d1 + d2;
 						if ((existingVoxel.MeshIndex == 0 || distance < existingVoxel.Distance) && SatTriangleIntersectsCube(p0, p1, p2, voxelCenter)) {
-							_voxels[voxelIndex] = new SatVoxel(voxelCenter, distance, meshIndex + 1, i0, i1, i2, p0, p1, p2);
+							_voxels[voxelIndex] = new SatVoxel((float3)voxelCenter, (float)distance, meshIndex + 1, i0, i1, i2, (float3)p0, (float3)p1, (float3)p2);
 						}
 					}
 				}
 			}
 		}
 		
-		private bool SatTriangleIntersectsCube(float3 v0, float3 v1, float3 v2, float3 c) {
+		private bool SatTriangleIntersectsCube(double3 v0, double3 v1, double3 v2, double3 c) {
 			v0 -= c;
 			v1 -= c;
 			v2 -= c;
@@ -129,7 +129,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Sat {
 			return SatTestAxis(v0, v1, v2, triangleNormal);
 		}
 		
-		private bool SatTestAxis(float3 v0, float3 v1, float3 v2, float3 axis) {
+		private bool SatTestAxis(double3 v0, double3 v1, double3 v2, double3 axis) {
 			var p0 = math.dot(v0, axis);
 			var p1 = math.dot(v1, axis);
 			var p2 = math.dot(v2, axis);
@@ -140,7 +140,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Sat {
 		}
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private int3 GetVertexPosition(float3 position, float voxelSize) {
+		private int3 GetVertexPosition(double3 position, double voxelSize) {
 			return new int3((int)(position.x / voxelSize),
 				(int)(position.y / voxelSize), (int)(position.z / voxelSize));
 		}
