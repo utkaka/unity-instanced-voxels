@@ -52,7 +52,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.SeparateGameObjects {
 				var voxel = Instantiate(prefab, transform, false).GetComponent<MeshRenderer>();
 				voxel.gameObject.name = $"voxel-{position}";
 				var voxelTransform = voxel.transform;
-				voxelTransform.position = startPosition + position * voxelSize - Vector3.one * voxelSize;
+				voxelTransform.position = startPosition + position * voxelSize;
 				voxelTransform.SetParent(_bones[bone].transform, true);
 				voxel.material.color = new Color(color.x / 255.0f, color.y / 255.0f, color.z / 255.0f);
 			}

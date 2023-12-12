@@ -136,7 +136,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization {
 
 			var voxelsAnimation = BakeAnimation(compressedBones);
 			
-			var voxels = Voxels.Create(_box, _bounds.min, _voxelSize, compressedVoxelsPositions, compressedVoxelsColors,
+			var voxels = Voxels.Create(new VoxelsBox(_box.Size - new int3(2, 2, 2)), _bounds.min, _voxelSize, compressedVoxelsPositions, compressedVoxelsColors,
 				compressedVoxelsBones, voxelsAnimation);
 				
 			meshData.Dispose();

@@ -84,7 +84,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 				var bytePosition = positionsSlice[i];
 				var position = new float3(bytePosition.x, bytePosition.y, bytePosition.z);
 				var color = colorsSlice[i];
-				_positionsArrayFloat[i] = startPosition + position * voxelSize - new float3(1.0f, 1.0f, 1.0f) * voxelSize;
+				_positionsArrayFloat[i] = startPosition + position * voxelSize;
 				_bonesArrayInt[i] = bonesSlice[i];
 				_colorsArrayFloat[i] = new float3(Mathf.GammaToLinearSpace(color.x / 255.0f), Mathf.GammaToLinearSpace(color.y / 255.0f), Mathf.GammaToLinearSpace(color.z / 255.0f));
 			}

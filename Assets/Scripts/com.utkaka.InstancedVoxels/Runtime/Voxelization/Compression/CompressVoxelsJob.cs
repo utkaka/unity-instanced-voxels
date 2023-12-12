@@ -35,7 +35,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Compression {
 		public void Execute(int index) {
 			if (_outerVoxels[index]) return;
 			var position = _box.GetVoxelPosition(index);
-			_compressedPositions.Add(new byte3((byte)position.x, (byte)position.y, (byte)position.z));
+			_compressedPositions.Add(new byte3((byte)(position.x - 1), (byte)(position.y - 1), (byte)(position.z - 1)));
 			_compressedBones.Add((byte)_voxelBones[index]);
 			_compressedColors.Add(_voxelColors[index]);
 		}
