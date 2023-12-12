@@ -37,7 +37,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization {
 			_boneTransforms = new Transform[meshCount][];
 			PrepareData(gameObjects);
 			_voxelSize = voxelSize;
-			_bounds = new Bounds();
+			_bounds = new Bounds(_meshes[0].bounds.center + _positions[0], Vector3.zero);
 			for (var i = 0; i < meshCount; i++) {
 				var mesh = _meshes[i];
 				var bounds = mesh.bounds;
