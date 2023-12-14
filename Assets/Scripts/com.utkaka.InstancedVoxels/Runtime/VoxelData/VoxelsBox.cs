@@ -26,38 +26,43 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int GetLeft(int voxelIndex) {
+		public readonly int GetLeft(int voxelIndex) {
 			return voxelIndex - _sizeYByZ;
 		}
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int GetRight(int voxelIndex) {
+		public readonly int GetRight(int voxelIndex) {
 			return voxelIndex + _sizeYByZ;
 		}
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int GetBottom(int voxelIndex) {
+		public readonly int GetBottom(int voxelIndex) {
 			return voxelIndex - _size.z;
 		}
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int GetTop(int voxelIndex) {
+		public readonly int GetTop(int voxelIndex) {
 			return voxelIndex + _size.z;
 		}
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int GetBack(int voxelIndex) {
+		public readonly int GetBack(int voxelIndex) {
 			return voxelIndex - 1;
 		}
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int GetFront(int voxelIndex) {
+		public readonly int GetFront(int voxelIndex) {
 			return voxelIndex + 1;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int GetVoxelIndex(int3 voxelPosition) {
+		public readonly int GetVoxelIndex(int3 voxelPosition) {
 			return voxelPosition.x * _sizeYByZ + voxelPosition.y * _size.z + voxelPosition.z;
+		}
+		
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public readonly int GetExtendedVoxelIndex(byte3 voxelPosition) {
+			return (voxelPosition.x + 1) * _sizeYByZ + (voxelPosition.y + 1) * _size.z + voxelPosition.z + 1;
 		}
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -53,18 +53,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 			var mesh = new Mesh {bounds = bounds, name = "Voxel Mesh"};
 			Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
 			
-			
-			
-			/*var triangles = GetSideTriangles();
-			var meshVertices = new Vector3[24];
-			var meshTriangles = new int[36];
-			
-			var mesh = new Mesh {
-				vertices = meshVertices,
-				triangles = meshTriangles
-			};
-			mesh.RecalculateBounds();
-			mesh.RecalculateNormals();*/
 			return mesh;
 		}
 
@@ -89,7 +77,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 			return result;
 		}
 
-		/*Left = 0, Right = 1, Front = 2, Back = 3, Bottom = 4, Top = 5*/
+		/*Left = 0, Right = 1, Back = 2, Front = 3, Bottom = 4, Top = 5*/
 		private static float3 GetSideNormal(int sideIndex) {
 			return sideIndex switch {
 				0 => math.left(),
