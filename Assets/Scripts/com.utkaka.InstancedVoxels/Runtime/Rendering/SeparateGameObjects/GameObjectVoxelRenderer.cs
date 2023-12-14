@@ -11,7 +11,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.SeparateGameObjects {
 		private float _animationLength;
 		private float _animationTime;
 
-		public void Init(Voxels voxels) {
+		public void Init(Voxels voxels, CullingOptions cullingOptions) {
 			_voxels = voxels;
 		}
 

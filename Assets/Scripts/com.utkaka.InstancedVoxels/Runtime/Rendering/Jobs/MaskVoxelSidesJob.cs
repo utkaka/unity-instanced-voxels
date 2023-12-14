@@ -9,7 +9,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		private readonly VoxelsBox _voxelsBox;
 		[ReadOnly]
 		private NativeSlice<byte3> _inputPositions;
-		[ReadOnly]
+		[ReadOnly, NativeDisableParallelForRestriction]
 		private NativeArray<byte> _voxelBoxBoneMasks;
 		[NativeDisableParallelForRestriction]
 		private NativeArray<byte> _voxelBoxMasks;
@@ -25,17 +25,18 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(_inputPositions[index]);
 			var mask = 1;
 			var neighbourIndex = _voxelsBox.GetLeft(voxelIndex);
-			mask |= ((_voxelBoxMasks[neighbourIndex] & 1) << 1) & _voxelBoxBoneMasks[neighbourIndex];
+			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 1;
 			neighbourIndex = _voxelsBox.GetRight(voxelIndex);
-			mask |= ((_voxelBoxMasks[neighbourIndex] & 1) << 2) & _voxelBoxBoneMasks[neighbourIndex];
+			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 2;
 			neighbourIndex = _voxelsBox.GetBack(voxelIndex);
-			mask |= ((_voxelBoxMasks[neighbourIndex] & 1) << 3) & _voxelBoxBoneMasks[neighbourIndex];
+			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 3;
 			neighbourIndex = _voxelsBox.GetFront(voxelIndex);
-			mask |= ((_voxelBoxMasks[neighbourIndex] & 1) << 4) & _voxelBoxBoneMasks[neighbourIndex];
+			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 4;
 			neighbourIndex = _voxelsBox.GetBottom(voxelIndex);
-			mask |= ((_voxelBoxMasks[neighbourIndex] & 1) << 5) & _voxelBoxBoneMasks[neighbourIndex];
+			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 5;
 			neighbourIndex = _voxelsBox.GetTop(voxelIndex);
-			mask |= ((_voxelBoxMasks[neighbourIndex] & 1) << 6) & _voxelBoxBoneMasks[neighbourIndex];
+			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 6;
+			mask &= _voxelBoxBoneMasks[voxelIndex];
 			_voxelBoxMasks[voxelIndex] = (byte)mask;
 		}
 	}

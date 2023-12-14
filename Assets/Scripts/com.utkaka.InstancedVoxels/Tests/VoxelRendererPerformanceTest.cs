@@ -7,7 +7,20 @@ using Object = UnityEngine.Object;
 
 namespace com.utkaka.InstancedVoxels.Tests {
 	public abstract class VoxelRendererPerformanceTest<T> where T : MonoBehaviour, IVoxelRenderer {
-		protected IEnumerator Test(string voxelSize) {
+		public class RendererTestCase {
+			public readonly string VoxelSize;
+			public readonly CullingOptions CullingOptions;
+			public RendererTestCase(string voxelSize, CullingOptions cullingOptions) {
+				VoxelSize = voxelSize;
+				CullingOptions = cullingOptions;
+			}
+
+			public override string ToString() {
+				return $"{VoxelSize}; Cull: {CullingOptions}";
+			}
+		}
+		
+		protected IEnumerator Test(RendererTestCase testCase) {
 			var sampleGroups = new []{
 				new SampleGroup("PlayerLoop", SampleUnit.Microsecond), 
 				//new SampleGroup("Gfx.WaitForPresentOnGfxThread", SampleUnit.Microsecond),
@@ -22,8 +35,8 @@ namespace com.utkaka.InstancedVoxels.Tests {
 			var renderer = new GameObject("Renderer", typeof(T))
 				.GetComponent<T>();
 			
-			var voxels = Resources.Load<Voxels>($"Cube_{voxelSize}");
-			renderer.Init(voxels);
+			var voxels = Resources.Load<Voxels>($"Cube_{testCase.VoxelSize}");
+			renderer.Init(voxels, testCase.CullingOptions);
 			yield return Measure.Frames()
 				.WarmupCount(60)
 				.ProfilerMarkers(sampleGroups)

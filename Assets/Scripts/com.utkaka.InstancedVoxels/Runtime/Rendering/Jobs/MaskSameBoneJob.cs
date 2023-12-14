@@ -3,6 +3,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	[BurstCompile]
@@ -24,7 +25,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 
 		public void Execute(int index) {
 			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(_inputPositions[index]);
-			var mask = 0;
+			var mask = 1;
 			var bone = _voxelBoxBones[voxelIndex];
 			
 			var neighbourIndex = _voxelsBox.GetLeft(voxelIndex);
@@ -39,6 +40,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 			mask |= math.select(0, 32, bone == _voxelBoxBones[neighbourIndex]);
 			neighbourIndex = _voxelsBox.GetTop(voxelIndex);
 			mask |= math.select(0, 64, bone == _voxelBoxBones[neighbourIndex]);
+			
 			_voxelBoxBoneMasks[voxelIndex] = (byte)mask;
 		}
 	}

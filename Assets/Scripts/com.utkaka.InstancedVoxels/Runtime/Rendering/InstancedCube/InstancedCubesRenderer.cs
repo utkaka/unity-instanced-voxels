@@ -7,6 +7,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 	public class InstancedCubesRenderer : MonoBehaviour, IVoxelRenderer{
@@ -22,6 +23,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 
 		[SerializeField]
 		private Voxels _voxels;
+		[SerializeField]
+		private CullingOptions _cullingOptions;
 		private Material _material;
 		private Mesh _mesh;
 		private int _positionsCount;
@@ -37,8 +40,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 		private ComputeBuffer _boneRotationsAnimationBuffer;
 
 
-		public void Init(Voxels voxels) {
+		public void Init(Voxels voxels, CullingOptions cullingOptions) {
 			_voxels = voxels;
+			_cullingOptions = cullingOptions;
 		}
 
 		private void Start() {
@@ -75,28 +79,43 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 				boneAnimationRotationsArray);
 
 			_positionsCount = positionsSlice.Length;
-			var positionsArrayFloat = new NativeArray<float3>(_positionsCount, Allocator.Persistent);
-			var colorsArrayFloat = new NativeArray<float3>(_positionsCount, Allocator.Persistent);
-			var bonesArrayInt = new NativeArray<uint>(_positionsCount, Allocator.Persistent);
+			var positionsArrayFloat = new NativeArray<float3>(_positionsCount, Allocator.TempJob);
+			var colorsArrayFloat = new NativeArray<float3>(_positionsCount, Allocator.TempJob);
+			var bonesArrayInt = new NativeArray<uint>(_positionsCount, Allocator.TempJob);
 
-			var voxelBoxMasks = new NativeArray<byte>(box.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-			var voxelBoxBones = new NativeArray<byte>(box.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-			var voxelBoxBoneMasks = new NativeArray<byte>(box.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+			var voxelBoxMasks = new NativeArray<byte>(box.Count, Allocator.TempJob);
+			var voxelBoxBones = new NativeArray<byte>(box.Count, Allocator.TempJob);
+			var voxelBoxBoneMasks = new NativeArray<byte>(box.Count, Allocator.TempJob);
+			
+			var positionsListFloat = new NativeList<float3>(_positionsCount, Allocator.TempJob);
+			var colorsListFloat = new NativeList<float3>(_positionsCount, Allocator.TempJob);
+			var bonesListInt = new NativeList<uint>(_positionsCount, Allocator.TempJob);
 
 			var setupVoxelsJob = new SetupRuntimeVoxelsJob(_voxels.VoxelSize, _voxels.StartPosition, box, positionsSlice, colorsSlice,
 				bonesSlice, positionsArrayFloat, colorsArrayFloat, bonesArrayInt, voxelBoxMasks, voxelBoxBones);
 			var maskSameBoneJob = new MaskSameBoneJob(box, positionsSlice, voxelBoxBones, voxelBoxBoneMasks);
 			var maskVoxelSidesJob =
 				new MaskVoxelSidesJob(box, positionsSlice, voxelBoxBoneMasks, voxelBoxMasks);
+			var cullInvisibleVoxelsJob = new CullInvisibleVoxelsJob(box, positionsSlice, voxelBoxMasks,
+				positionsArrayFloat, colorsArrayFloat, bonesArrayInt, positionsListFloat, colorsListFloat,
+				bonesListInt);
 
 			var sliceSize = _positionsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
 			var handle = setupVoxelsJob.Schedule(_positionsCount, sliceSize);
 			handle = maskSameBoneJob.Schedule(_positionsCount, sliceSize, handle);
 			handle = maskVoxelSidesJob.Schedule(_positionsCount, sliceSize, handle);
+			if (_cullingOptions.HasFlag(CullingOptions.InnerVoxels)) {
+				handle = cullInvisibleVoxelsJob.Schedule(_positionsCount, handle);
+				handle.Complete();
+				UpdateVoxels(true, positionsListFloat.AsArray(), bonesListInt.AsArray(), colorsListFloat.AsArray());
+			} else {
+				handle.Complete();
+				UpdateVoxels(true, positionsArrayFloat, bonesArrayInt, colorsArrayFloat);
+			}
 			
-			handle.Complete();
 			
-			UpdateVoxels(true, positionsArrayFloat, bonesArrayInt, colorsArrayFloat);
+			
+			
 			
 			colorsArray.Dispose();
 			positionsArray.Dispose();
@@ -109,6 +128,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 			positionsArrayFloat.Dispose();
 			colorsArrayFloat.Dispose();
 			bonesArrayInt.Dispose();
+			
+			positionsListFloat.Dispose();
+			bonesListInt.Dispose();
+			colorsListFloat.Dispose();
 
 			voxelBoxMasks.Dispose();
 			voxelBoxBones.Dispose();

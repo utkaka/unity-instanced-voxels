@@ -516,6 +516,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _voxels: {fileID: 11400000, guid: 456cd23c5461a451ab48804c464c6f57, type: 2}
+  _cullingOptions: -1
 --- !u!4 &2047398415
 Transform:
   m_ObjectHideFlags: 0
