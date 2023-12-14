@@ -82,10 +82,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 			var positionsArrayFloat = new NativeArray<float3>(_positionsCount, Allocator.TempJob);
 			var colorsArrayFloat = new NativeArray<float3>(_positionsCount, Allocator.TempJob);
 			var bonesArrayInt = new NativeArray<uint>(_positionsCount, Allocator.TempJob);
+			var boneMasks = new NativeArray<byte>(_positionsCount, Allocator.TempJob);
 
 			var voxelBoxMasks = new NativeArray<byte>(box.Count, Allocator.TempJob);
 			var voxelBoxBones = new NativeArray<byte>(box.Count, Allocator.TempJob);
-			var voxelBoxBoneMasks = new NativeArray<byte>(box.Count, Allocator.TempJob);
 			
 			var positionsListFloat = new NativeList<float3>(_positionsCount, Allocator.TempJob);
 			var colorsListFloat = new NativeList<float3>(_positionsCount, Allocator.TempJob);
@@ -93,9 +93,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 
 			var setupVoxelsJob = new SetupRuntimeVoxelsJob(_voxels.VoxelSize, _voxels.StartPosition, box, positionsSlice, colorsSlice,
 				bonesSlice, positionsArrayFloat, colorsArrayFloat, bonesArrayInt, voxelBoxMasks, voxelBoxBones);
-			var maskSameBoneJob = new MaskSameBoneJob(box, positionsSlice, voxelBoxBones, voxelBoxBoneMasks);
+			var maskSameBoneJob = new MaskSameBoneJob(box, positionsSlice, voxelBoxBones, boneMasks);
 			var maskVoxelSidesJob =
-				new MaskVoxelSidesJob(box, positionsSlice, voxelBoxBoneMasks, voxelBoxMasks);
+				new MaskVoxelSidesJob(box, positionsSlice, boneMasks, voxelBoxMasks);
 			var cullInvisibleVoxelsJob = new CullInvisibleVoxelsJob(box, positionsSlice, voxelBoxMasks,
 				positionsArrayFloat, colorsArrayFloat, bonesArrayInt, positionsListFloat, colorsListFloat,
 				bonesListInt);
@@ -135,7 +135,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 
 			voxelBoxMasks.Dispose();
 			voxelBoxBones.Dispose();
-			voxelBoxBoneMasks.Dispose();
+			boneMasks.Dispose();
 
 			if (!(_voxels.Animation.FrameRate > 0)) return;
 			_animationLength = _voxels.Animation.FramesCount;

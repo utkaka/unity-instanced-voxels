@@ -13,14 +13,14 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		private NativeSlice<byte3> _inputPositions;
 		[ReadOnly, NativeDisableParallelForRestriction]
 		private NativeArray<byte> _voxelBoxBones;
-		[WriteOnly, NativeDisableParallelForRestriction]
-		private NativeArray<byte> _voxelBoxBoneMasks;
+		[WriteOnly]
+		private NativeArray<byte> _boneMasks;
 
-		public MaskSameBoneJob(VoxelsBox voxelsBox, NativeSlice<byte3> inputPositions, NativeArray<byte> voxelBoxBones, NativeArray<byte> voxelBoxBoneMasks) {
+		public MaskSameBoneJob(VoxelsBox voxelsBox, NativeSlice<byte3> inputPositions, NativeArray<byte> voxelBoxBones, NativeArray<byte> boneMasks) {
 			_voxelsBox = voxelsBox;
 			_inputPositions = inputPositions;
 			_voxelBoxBones = voxelBoxBones;
-			_voxelBoxBoneMasks = voxelBoxBoneMasks;
+			_boneMasks = boneMasks;
 		}
 
 		public void Execute(int index) {
@@ -41,7 +41,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 			neighbourIndex = _voxelsBox.GetTop(voxelIndex);
 			mask |= math.select(0, 64, bone == _voxelBoxBones[neighbourIndex]);
 			
-			_voxelBoxBoneMasks[voxelIndex] = (byte)mask;
+			_boneMasks[index] = (byte)mask;
 		}
 	}
 }

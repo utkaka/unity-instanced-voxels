@@ -9,15 +9,15 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		private readonly VoxelsBox _voxelsBox;
 		[ReadOnly]
 		private NativeSlice<byte3> _inputPositions;
-		[ReadOnly, NativeDisableParallelForRestriction]
-		private NativeArray<byte> _voxelBoxBoneMasks;
+		[ReadOnly]
+		private NativeArray<byte> _boneMasks;
 		[NativeDisableParallelForRestriction]
 		private NativeArray<byte> _voxelBoxMasks;
 
-		public MaskVoxelSidesJob(VoxelsBox voxelsBox, NativeSlice<byte3> inputPositions, NativeArray<byte> voxelBoxBoneMasks, NativeArray<byte> voxelBoxMasks) {
+		public MaskVoxelSidesJob(VoxelsBox voxelsBox, NativeSlice<byte3> inputPositions, NativeArray<byte> boneMasks, NativeArray<byte> voxelBoxMasks) {
 			_voxelsBox = voxelsBox;
 			_inputPositions = inputPositions;
-			_voxelBoxBoneMasks = voxelBoxBoneMasks;
+			_boneMasks = boneMasks;
 			_voxelBoxMasks = voxelBoxMasks;
 		}
 
@@ -36,7 +36,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 5;
 			neighbourIndex = _voxelsBox.GetTop(voxelIndex);
 			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 6;
-			mask &= _voxelBoxBoneMasks[voxelIndex];
+			mask &= _boneMasks[index];
 			_voxelBoxMasks[voxelIndex] = (byte)mask;
 		}
 	}
