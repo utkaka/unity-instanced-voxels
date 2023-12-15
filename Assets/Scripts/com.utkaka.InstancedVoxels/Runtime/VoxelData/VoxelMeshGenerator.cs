@@ -56,15 +56,43 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 			return mesh;
 		}
 
-		/*public static Mesh GetSideMesh(int sideIndex, float voxelSize) {
-			var mesh = new Mesh {
-				vertices = GetSideVertices(sideIndex, voxelSize),
-				triangles = GetSideTriangles()
+		public static Mesh GetSideMesh(int sideIndex, float voxelSize) {
+			var meshDataArray = Mesh.AllocateWritableMeshData(1);
+			var meshData = meshDataArray[0];
+			var vertexAttributes = new NativeArray<VertexAttributeDescriptor>(2, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+			vertexAttributes[0] = new VertexAttributeDescriptor(VertexAttribute.Position, dimension: 3);
+			vertexAttributes[1] = new VertexAttributeDescriptor(VertexAttribute.Normal, dimension: 3);
+			meshData.SetVertexBufferParams(4, vertexAttributes);
+			meshData.SetIndexBufferParams(6, IndexFormat.UInt16);
+			
+			var vertices = meshData.GetVertexData<Vertex>();
+			var triangleIndices = meshData.GetIndexData<ushort>();
+			var sideTriangles = GetSideTriangles();
+			
+			var sideVertices = GetSideVertices(sideIndex, voxelSize);
+			var vertex = new Vertex {
+				Normal = GetSideNormal(sideIndex),
 			};
-			mesh.RecalculateBounds();
-			mesh.RecalculateNormals();
+			for (var j = 0; j < 4; j++) {
+				vertex.Position = sideVertices[j];
+				vertices[j] = vertex;
+			}
+			for (var j = 0; j < 6; j++) {
+				triangleIndices[j] = sideTriangles[j];
+			}
+			sideVertices.Dispose();
+			sideTriangles.Dispose();
+			vertexAttributes.Dispose();
+
+			var bounds = new Bounds(Vector3.one * (voxelSize / 2.0f), new Vector3(voxelSize, voxelSize));
+			meshData.subMeshCount = 1;
+			meshData.SetSubMesh(0, new SubMeshDescriptor(0, 6) {
+				bounds = bounds, vertexCount = 4 }, MeshUpdateFlags.DontRecalculateBounds);
+			var mesh = new Mesh {bounds = bounds, name = "Side Mesh {sideIndex}"};
+			Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
+			
 			return mesh;
-		}*/
+		}
 		
 		private static NativeArray<ushort> GetSideTriangles() {
 			var result = new NativeArray<ushort>(6, Allocator.Temp, NativeArrayOptions.UninitializedMemory);

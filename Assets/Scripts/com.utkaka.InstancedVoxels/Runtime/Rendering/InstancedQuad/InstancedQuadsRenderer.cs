@@ -1,4 +1,5 @@
 using System.Collections;
+using com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
@@ -7,12 +8,9 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
-	public class InstancedCubesRenderer : MonoBehaviour, IVoxelRenderer{
+namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
+	public class InstancedQuadsRenderer : MonoBehaviour, IVoxelRenderer{
 		private static readonly int AnimationFrame = Shader.PropertyToID("_AnimationFrame");
-		private static readonly int VoxelPositionsBuffer = Shader.PropertyToID("voxel_positions_buffer");
-		private static readonly int VoxelBonesBuffer = Shader.PropertyToID("voxel_bones_buffer");
-		private static readonly int VoxelColorsBuffer = Shader.PropertyToID("voxel_colors_buffer");
 		private static readonly int BonePositionsBuffer = Shader.PropertyToID("bone_positions_buffer");
 		private static readonly int BonePositionsAnimationBuffer = Shader.PropertyToID("bone_positions_animation_buffer");
 		private static readonly int BoneRotationsAnimationBuffer = Shader.PropertyToID("bone_rotations_animation_buffer");
@@ -23,16 +21,12 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 		private Voxels _voxels;
 		[SerializeField]
 		private CullingOptions _cullingOptions;
-		private Material _material;
-		private Mesh _mesh;
-		private int _positionsCount;
 		private Bounds _bounds;
 		private float _animationTime;
 		private float _animationLength;
+
+		private QuadRenderer[] _quadRenderers;
 		
-		private ComputeBuffer _positionBuffer;
-		private ComputeBuffer _bonesBuffer;
-		private ComputeBuffer _colorsBuffer;
 		private ComputeBuffer _bonePositionsBuffer;
 		private ComputeBuffer _bonePositionsAnimationBuffer;
 		private ComputeBuffer _boneRotationsAnimationBuffer;
@@ -48,12 +42,14 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 		}
 		
 		private void InitVoxels() {
+			_quadRenderers = new QuadRenderer[6];
+			for (var i = 0; i < 6; i++) {
+				_quadRenderers[i] = new QuadRenderer(i, _voxels.VoxelSize, _cullingOptions);
+			}
+			
 			_bounds = new Bounds(Vector3.zero, 
 				new Vector3(_voxels.Box.Size.x, _voxels.Box.Size.y, _voxels.Box.Size.z) * _voxels.VoxelSize);
 			
-			_mesh = VoxelMeshGenerator.GetCubeMesh(_voxels.VoxelSize);
-			_material = new Material(Shader.Find("Shader Graphs/InstancedVoxelShader"));
-
 			var box = new VoxelsBox(_voxels.Box.Size + new int3(2, 2, 2));
 			
 			var colorsArray = new NativeArray<byte>(_voxels.Colors, Allocator.TempJob);
@@ -76,40 +72,29 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 			UpdateBones(_voxels.Animation.FramesCount, bonePositionsArray, boneAnimationPositionsArray,
 				boneAnimationRotationsArray);
 
-			_positionsCount = positionsSlice.Length;
-			var positionsArrayFloat = new NativeArray<float3>(_positionsCount, Allocator.TempJob);
-			var colorsArrayFloat = new NativeArray<float3>(_positionsCount, Allocator.TempJob);
-			var bonesArrayInt = new NativeArray<uint>(_positionsCount, Allocator.TempJob);
-			var boneMasks = new NativeArray<byte>(_positionsCount, Allocator.TempJob);
+			var positionsCount = positionsSlice.Length;
+			var positionsArrayFloat = new NativeArray<float3>(positionsCount, Allocator.TempJob);
+			var colorsArrayFloat = new NativeArray<float3>(positionsCount, Allocator.TempJob);
+			var bonesArrayInt = new NativeArray<uint>(positionsCount, Allocator.TempJob);
+			var boneMasks = new NativeArray<byte>(positionsCount, Allocator.TempJob);
 
 			var voxelBoxMasks = new NativeArray<byte>(box.Count, Allocator.TempJob);
 			var voxelBoxBones = new NativeArray<byte>(box.Count, Allocator.TempJob);
-			
-			var positionsListFloat = new NativeList<float3>(_positionsCount, Allocator.TempJob);
-			var colorsListFloat = new NativeList<float3>(_positionsCount, Allocator.TempJob);
-			var bonesListInt = new NativeList<uint>(_positionsCount, Allocator.TempJob);
 
 			var setupVoxelsJob = new SetupRuntimeVoxelsJob(_voxels.VoxelSize, _voxels.StartPosition, box, positionsSlice, colorsSlice,
 				bonesSlice, positionsArrayFloat, colorsArrayFloat, bonesArrayInt, voxelBoxMasks, voxelBoxBones);
 			var maskSameBoneJob = new MaskSameBoneJob(box, positionsSlice, voxelBoxBones, boneMasks);
 			var maskVoxelSidesJob =
 				new MaskVoxelSidesJob(box, positionsSlice, boneMasks, voxelBoxMasks);
-			var cullInvisibleVoxelsJob = new CullInvisibleVoxelsJob(box, positionsSlice, voxelBoxMasks,
-				positionsArrayFloat, colorsArrayFloat, bonesArrayInt, positionsListFloat, colorsListFloat,
-				bonesListInt);
 
-			var sliceSize = _positionsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
-			var handle = setupVoxelsJob.Schedule(_positionsCount, sliceSize);
-			handle = maskSameBoneJob.Schedule(_positionsCount, sliceSize, handle);
-			handle = maskVoxelSidesJob.Schedule(_positionsCount, sliceSize, handle);
+			var sliceSize = positionsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
+			var handle = setupVoxelsJob.Schedule(positionsCount, sliceSize);
+			handle = maskSameBoneJob.Schedule(positionsCount, sliceSize, handle);
+			handle = maskVoxelSidesJob.Schedule(positionsCount, sliceSize, handle);
 			
-			if (_cullingOptions == CullingOptions.InnerVoxels) {
-				handle = cullInvisibleVoxelsJob.Schedule(_positionsCount, handle);
-				handle.Complete();
-				UpdateVoxels(true, positionsListFloat.AsArray(), bonesListInt.AsArray(), colorsListFloat.AsArray());
-			} else {
-				handle.Complete();
-				UpdateVoxels(true, positionsArrayFloat, bonesArrayInt, colorsArrayFloat);
+			for (var i = 0; i < 6; i++) {
+				_quadRenderers[i].InitVoxels(positionsCount, box, positionsSlice, positionsArrayFloat, colorsArrayFloat,
+					bonesArrayInt, voxelBoxMasks, handle);
 			}
 			
 			colorsArray.Dispose();
@@ -123,10 +108,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 			positionsArrayFloat.Dispose();
 			colorsArrayFloat.Dispose();
 			bonesArrayInt.Dispose();
-			
-			positionsListFloat.Dispose();
-			bonesListInt.Dispose();
-			colorsListFloat.Dispose();
 
 			voxelBoxMasks.Dispose();
 			voxelBoxBones.Dispose();
@@ -147,49 +128,33 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube {
 				if (_animationTime >= _animationLength) {
 					_animationTime -= _animationLength;
 				}
-				_material.SetFloat(AnimationFrame, _animationTime);
+				Shader.SetGlobalFloat(AnimationFrame, _animationTime);
 			}
 		}
 
 		private void Update() {
-			if (_positionsCount == 0) return;
-			Graphics.DrawMeshInstancedProcedural(_mesh, 0, _material,
-				_bounds, _positionsCount, null, ShadowCastingMode.Off, false);
+			for (var i = 0; i < 6; i++) {
+				_quadRenderers[i].Render(_bounds);
+			}
 		}
 
 		private void UpdateBones(int animationFramesCount, NativeArray<float3> bonePositions, NativeArray<float3> boneAnimationPositions,
 			NativeArray<float4> boneAnimationRotations) {
-			_material.SetFloat(AnimationFramesCount, animationFramesCount);
-			_material.SetFloat(BonesCount, bonePositions.Length);
-			SetBufferData(BonePositionsBuffer, ref _bonePositionsBuffer, bonePositions, 12);
-			SetBufferData(BonePositionsAnimationBuffer, ref _bonePositionsAnimationBuffer, boneAnimationPositions, 12);
-			SetBufferData(BoneRotationsAnimationBuffer, ref _boneRotationsAnimationBuffer, boneAnimationRotations, 16);
-		}
-		
-		private void UpdateVoxels(bool visible, NativeArray<float3> voxelPositions, NativeArray<uint> voxelBones, NativeArray<float3> voxelColors) {
-			_positionsCount = !visible ? 0 : voxelPositions.Length;
-			if (_positionsCount == 0) {
-				_positionBuffer?.Dispose();
-				_bonesBuffer?.Dispose();
-				_colorsBuffer?.Dispose();
-				return;
-			}
-			SetBufferData(VoxelPositionsBuffer, ref _positionBuffer, voxelPositions, 12);
-			SetBufferData(VoxelBonesBuffer, ref _bonesBuffer, voxelBones, 4);
-			SetBufferData(VoxelColorsBuffer, ref _colorsBuffer, voxelColors, 12);
+			Shader.SetGlobalFloat(AnimationFramesCount, animationFramesCount);
+			Shader.SetGlobalFloat(BonesCount, bonePositions.Length);
+			SetGlobalBufferData(BonePositionsBuffer, ref _bonePositionsBuffer, bonePositions, 12);
+			SetGlobalBufferData(BonePositionsAnimationBuffer, ref _bonePositionsAnimationBuffer, boneAnimationPositions, 12);
+			SetGlobalBufferData(BoneRotationsAnimationBuffer, ref _boneRotationsAnimationBuffer, boneAnimationRotations, 16);
 		}
 
-		private void SetBufferData<T>(int nameId, ref ComputeBuffer buffer, NativeArray<T> data, int stride) where T : struct {
+		private void SetGlobalBufferData<T>(int nameId, ref ComputeBuffer buffer, NativeArray<T> data, int stride) where T : struct {
 			buffer?.Dispose();
 			buffer = new ComputeBuffer(data.Length, stride);
 			buffer.SetData(data);
-			_material.SetBuffer(nameId, buffer);
+			Shader.SetGlobalBuffer(nameId, buffer);
 		}
 
 		private void OnDestroy() {
-			_positionBuffer?.Dispose();
-			_bonesBuffer?.Dispose();
-			_colorsBuffer?.Dispose();
 			_bonePositionsBuffer?.Dispose();
 			_bonePositionsAnimationBuffer?.Dispose();
 			_boneRotationsAnimationBuffer?.Dispose();
