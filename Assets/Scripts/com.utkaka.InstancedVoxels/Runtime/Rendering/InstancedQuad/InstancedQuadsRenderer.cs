@@ -155,6 +155,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		}
 
 		private void OnDestroy() {
+			for (var i = 0; i < 6; i++) {
+				_quadRenderers[i].Dispose();
+			}
 			_bonePositionsBuffer?.Dispose();
 			_bonePositionsAnimationBuffer?.Dispose();
 			_boneRotationsAnimationBuffer?.Dispose();
