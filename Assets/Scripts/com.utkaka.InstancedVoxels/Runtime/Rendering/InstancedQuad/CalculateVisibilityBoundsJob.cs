@@ -14,7 +14,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		private readonly float3 _sideNormal;
 		private readonly VoxelsBox _voxelsBox;
 		private readonly float3 _cameraPosition;
-		private readonly quaternion _cameraForward;
+		private readonly float3 _cameraForward;
 		private readonly int _currentAnimationFrame;
 		private readonly int _nextAnimationFrame;
 		private readonly float _frameTransitionRatio;
@@ -27,7 +27,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		[WriteOnly, NativeDisableContainerSafetyRestriction]
 		private NativeSlice<VoxelsBounds> _visibilityBounds;
 
-		public CalculateVisibilityBoundsJob(float voxelSize, float3 startPosition, float3 sideNormal, VoxelsBox voxelsBox, float3 cameraPosition, quaternion cameraForward, int currentAnimationFrame, int nextAnimationFrame, float frameTransitionRatio, NativeArray<float3> bonesPositions, NativeArray<float3> bonesAnimationPositions, NativeArray<float4> bonesAnimationRotations, NativeSlice<VoxelsBounds> visibilityBounds) {
+		public CalculateVisibilityBoundsJob(float voxelSize, float3 startPosition, float3 sideNormal,
+			VoxelsBox voxelsBox, float3 cameraPosition, float3 cameraForward, int currentAnimationFrame,
+			int nextAnimationFrame, float frameTransitionRatio, NativeArray<float3> bonesPositions,
+			NativeArray<float3> bonesAnimationPositions, NativeArray<float4> bonesAnimationRotations,
+			NativeSlice<VoxelsBounds> visibilityBounds) {
 			_voxelSize = voxelSize;
 			_startPosition = startPosition;
 			_sideNormal = sideNormal;
@@ -124,7 +128,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			var rotatedPoint = math.mul(quaternion, offsetPoint) + bonePosition;
 			voxelPosition = rotatedPoint + animationPosition;
 			var cameraToVoxel = voxelPosition - _cameraPosition;
-			return math.dot(_sideNormal, cameraToVoxel)  <= 0.0f;
+			return math.dot(_cameraForward, cameraToVoxel) >= 0 && math.dot(_sideNormal, cameraToVoxel)  <= 0.0f;
 		}
 	}
 }

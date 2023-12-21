@@ -99,14 +99,14 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			
 			if (_cullingOptions == CullingOptions.InnerSidesAndBackface) {
 				var cameraPosition = Camera.main.transform.position;
-				var cameraRotation = Quaternion.Inverse(Camera.main.transform.rotation);
+				var cameraForward = Camera.main.transform.forward;
 				JobHandle visibilityBoundsHandle = default;
 				var currentFrame = (int)_animationTime;
 				var nextFrame = (int)((currentFrame + 1) % _animationLength);
 				var frameTransitionRatio = _animationTime - currentFrame;
 				for (var i = 0; i < 6; i++) {
 					var calculateVisibilityBoundsJob =
-						new CalculateVisibilityBoundsJob(_voxels.VoxelSize, _voxels.StartPosition, VoxelMeshGenerator.GetSideNormal(i), box, cameraPosition, cameraRotation,
+						new CalculateVisibilityBoundsJob(_voxels.VoxelSize, _voxels.StartPosition, VoxelMeshGenerator.GetSideNormal(i), box, cameraPosition, cameraForward,
 							currentFrame, nextFrame, frameTransitionRatio,
 							bonePositionsArray, boneAnimationPositionsArray, boneAnimationRotationsArray,
 							new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * i, bonesCount));
