@@ -43,7 +43,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 
 		public void InitVoxels(int positionsCount, VoxelsBox box, NativeSlice<byte3> positionsSlice,
 			NativeArray<float3> positionsArrayFloat, NativeArray<float3> colorsArrayFloat,
-			NativeArray<uint> bonesArrayInt, NativeArray<byte> voxelBoxMasks, JobHandle handle) {
+			NativeArray<uint> bonesArrayInt, NativeArray<byte> voxelBoxMasks,
+			NativeArray<VoxelsBounds> visibilityBounds, JobHandle handle) {
 			var positionsListFloat = new NativeList<float3>(positionsCount, Allocator.TempJob);
 			var colorsListFloat = new NativeList<float3>(positionsCount, Allocator.TempJob);
 			var bonesListInt = new NativeList<uint>(positionsCount, Allocator.TempJob);
@@ -59,6 +60,14 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 				var cullInvisibleSidesJob = new CullInvisibleSidesJob(box, _sideIndex, positionsSlice, voxelBoxMasks,
 					positionsArrayFloat, colorsArrayFloat, bonesArrayInt, positionsListFloat, colorsListFloat,
 					bonesListInt);
+				handle = cullInvisibleSidesJob.Schedule(positionsCount, handle);
+				handle.Complete();
+				UpdateVoxels(true, positionsListFloat.AsArray(), bonesListInt.AsArray(), colorsListFloat.AsArray());
+			} else if (_cullingOptions == CullingOptions.InnerSidesAndBackface) {
+				var bonesCount = visibilityBounds.Length / 6;
+				var cullInvisibleSidesJob = new CullInvisibleSidesAndBackfaceJob(box, _sideIndex, positionsSlice, voxelBoxMasks,
+					positionsArrayFloat, colorsArrayFloat, bonesArrayInt, positionsListFloat, colorsListFloat,
+					bonesListInt, new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * _sideIndex, bonesCount));
 				handle = cullInvisibleSidesJob.Schedule(positionsCount, handle);
 				handle.Complete();
 				UpdateVoxels(true, positionsListFloat.AsArray(), bonesListInt.AsArray(), colorsListFloat.AsArray());

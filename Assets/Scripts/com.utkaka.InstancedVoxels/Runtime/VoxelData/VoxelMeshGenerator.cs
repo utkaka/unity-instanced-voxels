@@ -106,7 +106,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 		}
 
 		/*Left = 0, Right = 1, Back = 2, Front = 3, Bottom = 4, Top = 5*/
-		private static float3 GetSideNormal(int sideIndex) {
+		public static float3 GetSideNormal(int sideIndex) {
 			return sideIndex switch {
 				0 => math.left(),
 				1 => math.right(),

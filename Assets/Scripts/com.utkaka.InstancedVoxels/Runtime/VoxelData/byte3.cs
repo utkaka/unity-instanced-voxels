@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
@@ -14,6 +15,30 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 			this.x = x;
 			this.y = y;
 			this.z = z;
+		}
+		
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte3 zero() { return new byte3(0, 0, 0); }
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte3 right() { return new byte3(1, 0, 0); }
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte3 up() { return new byte3(0, 1, 0); }
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte3 forward() { return new byte3(0, 0, 1); }
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte3 operator *(byte3 lhs, int rhs) {
+			return new byte3((byte) (lhs.x * rhs), (byte) (lhs.y * rhs), (byte) (lhs.z * rhs));
+		}
+		
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte3 operator *(int lhs, byte3 rhs) {
+			return rhs * lhs;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte3 operator +(byte3 lhs, byte3 rhs) {
+			return new byte3((byte) (lhs.x + rhs.x), (byte) (lhs.y + rhs.y), (byte) (lhs.z + rhs.z));
 		}
 	}
 }

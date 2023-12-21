@@ -91,10 +91,36 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			var handle = setupVoxelsJob.Schedule(positionsCount, sliceSize);
 			handle = maskSameBoneJob.Schedule(positionsCount, sliceSize, handle);
 			handle = maskVoxelSidesJob.Schedule(positionsCount, sliceSize, handle);
+
+			var bonesCount = bonePositionsArray.Length;
+			var visibilityBounds = _cullingOptions == CullingOptions.InnerSidesAndBackface
+				? new NativeArray<VoxelsBounds>(6 * bonesCount, Allocator.TempJob)
+				: new NativeArray<VoxelsBounds>(0, Allocator.TempJob);
 			
+			if (_cullingOptions == CullingOptions.InnerSidesAndBackface) {
+				var cameraPosition = Camera.main.transform.position;
+				var cameraRotation = Quaternion.Inverse(Camera.main.transform.rotation);
+				JobHandle visibilityBoundsHandle = default;
+				var currentFrame = (int)_animationTime;
+				var nextFrame = (int)((currentFrame + 1) % _animationLength);
+				var frameTransitionRatio = _animationTime - currentFrame;
+				for (var i = 0; i < 6; i++) {
+					var calculateVisibilityBoundsJob =
+						new CalculateVisibilityBoundsJob(_voxels.VoxelSize, _voxels.StartPosition, VoxelMeshGenerator.GetSideNormal(i), box, cameraPosition, cameraRotation,
+							currentFrame, nextFrame, frameTransitionRatio,
+							bonePositionsArray, boneAnimationPositionsArray, boneAnimationRotationsArray,
+							new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * i, bonesCount));
+					visibilityBoundsHandle = JobHandle.CombineDependencies(visibilityBoundsHandle,
+						calculateVisibilityBoundsJob.Schedule(bonesCount,
+							bonesCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle));
+				}
+
+				handle = visibilityBoundsHandle;
+			}
+
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].InitVoxels(positionsCount, box, positionsSlice, positionsArrayFloat, colorsArrayFloat,
-					bonesArrayInt, voxelBoxMasks, handle);
+					bonesArrayInt, voxelBoxMasks, visibilityBounds, handle);
 			}
 			
 			colorsArray.Dispose();
@@ -112,6 +138,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			voxelBoxMasks.Dispose();
 			voxelBoxBones.Dispose();
 			boneMasks.Dispose();
+
+			visibilityBounds.Dispose();
 
 			if (!(_voxels.Animation.FrameRate > 0)) return;
 			_animationLength = _voxels.Animation.FramesCount;
