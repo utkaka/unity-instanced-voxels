@@ -15,6 +15,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		private readonly VoxelsBox _voxelsBox;
 		private readonly float3 _cameraPosition;
 		private readonly float3 _cameraForward;
+		private readonly int _framesCount;
 		private readonly int _currentAnimationFrame;
 		private readonly int _nextAnimationFrame;
 		private readonly float _frameTransitionRatio;
@@ -28,7 +29,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		private NativeSlice<VoxelsBounds> _visibilityBounds;
 
 		public CalculateVisibilityBoundsJob(float voxelSize, float3 startPosition, float3 sideNormal,
-			VoxelsBox voxelsBox, float3 cameraPosition, float3 cameraForward, int currentAnimationFrame,
+			VoxelsBox voxelsBox, float3 cameraPosition, float3 cameraForward, int framesCount, int currentAnimationFrame,
 			int nextAnimationFrame, float frameTransitionRatio, NativeArray<float3> bonesPositions,
 			NativeArray<float3> bonesAnimationPositions, NativeArray<float4> bonesAnimationRotations,
 			NativeSlice<VoxelsBounds> visibilityBounds) {
@@ -38,6 +39,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			_voxelsBox = voxelsBox;
 			_cameraPosition = cameraPosition;
 			_cameraForward = cameraForward;
+			_framesCount = framesCount;
 			_currentAnimationFrame = currentAnimationFrame;
 			_nextAnimationFrame = nextAnimationFrame;
 			_frameTransitionRatio = frameTransitionRatio;
@@ -48,11 +50,12 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		}
 
 		public void Execute(int index) {
+			var animationIndex = _framesCount * index;
 			var bonePosition = _bonesPositions[index];
-			var animationRotation = math.lerp(_bonesAnimationRotations[index * _currentAnimationFrame], _bonesAnimationRotations[index * _nextAnimationFrame],
+			var animationRotation = math.lerp(_bonesAnimationRotations[animationIndex + _currentAnimationFrame], _bonesAnimationRotations[animationIndex + _nextAnimationFrame],
 				_frameTransitionRatio);
-			var animationPosition = math.lerp(_bonesAnimationPositions[index * _currentAnimationFrame],
-				_bonesAnimationPositions[index * _nextAnimationFrame],
+			var animationPosition = math.lerp(_bonesAnimationPositions[animationIndex + _currentAnimationFrame],
+				_bonesAnimationPositions[animationIndex + _nextAnimationFrame],
 				_frameTransitionRatio);
 			
 			var quadBounds1 = GetQuadBounds(new byte3(0, 0, 0), byte3.right(), byte3.up(), _voxelsBox.Size.x,
@@ -90,8 +93,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 				animationPosition, animationRotation);
 			var axis2Bounds2 = GetAxisBounds(start + axis1 * squareBounds.y, axis2, boxAxisSize2, bonePosition,
 				animationPosition, animationRotation);
-			return new int4(math.min(axis1Bounds1.x, axis2Bounds1.x), math.max(axis1Bounds1.y, axis2Bounds1.y),
-				math.min(axis1Bounds2.x, axis2Bounds2.x), math.max(axis1Bounds2.y, axis2Bounds2.y));
+			return new int4(math.min(axis1Bounds1.x, axis1Bounds2.x), math.max(axis1Bounds1.y, axis1Bounds2.y),
+				math.min(axis2Bounds1.x, axis2Bounds2.x), math.max(axis2Bounds1.y, axis2Bounds2.y));
 		}
 
 		private int2 GetAxisBounds(byte3 start, byte3 axis, int boxAxisSize, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
@@ -101,7 +104,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 				//rightmost visible
 				while (left < right) {
 					var middle = (left + right) / 2;
-					if (!IsVisible(axis * middle, bonePosition, animationPosition, animationRotation)) {
+					if (!IsVisible(start + axis * middle, bonePosition, animationPosition, animationRotation)) {
 						right = middle;
 					} else {
 						left = middle + 1;
@@ -128,7 +131,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			var rotatedPoint = math.mul(quaternion, offsetPoint) + bonePosition;
 			voxelPosition = rotatedPoint + animationPosition;
 			var cameraToVoxel = voxelPosition - _cameraPosition;
-			return math.dot(_cameraForward, cameraToVoxel) >= 0 && math.dot(_sideNormal, cameraToVoxel)  <= 0.0f;
+			return math.dot(_cameraForward, cameraToVoxel) >= 0 && math.dot(math.mul(quaternion, _sideNormal), cameraToVoxel)  <= 0.0f;
 		}
 	}
 }

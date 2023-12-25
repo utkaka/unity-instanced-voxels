@@ -28,6 +28,11 @@ namespace com.utkaka.InstancedVoxels.Tests {
 			yield return new RendererTestCase("002", CullingOptions.InnerSidesAndBackface);
 			yield return new RendererTestCase("001", CullingOptions.InnerSidesAndBackface);
 			yield return new RendererTestCase("1_div_255", CullingOptions.InnerSidesAndBackface);
+			yield return new RendererTestCase("008", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("004", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("002", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("001", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("1_div_255", CullingOptions.InnerSidesAndBackfaceUpdate);
 		}
 
 		[UnityTest, Performance]

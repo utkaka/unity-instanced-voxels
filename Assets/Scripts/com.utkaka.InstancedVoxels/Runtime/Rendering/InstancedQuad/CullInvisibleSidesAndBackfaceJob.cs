@@ -1,9 +1,11 @@
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
+	[BurstCompile]
 	public struct CullInvisibleSidesAndBackfaceJob : IJobFor {
 		private readonly VoxelsBox _voxelsBox;
 		private readonly int _sideMask;
@@ -22,13 +24,16 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		private NativeSlice<VoxelsBounds> _visibilityBounds;
 		
 		[WriteOnly]
-		private NativeList<float3> _positions;
+		private NativeList<float3>.ParallelWriter _positions;
 		[WriteOnly]
-		private NativeList<float3> _colors;
+		private NativeList<float3>.ParallelWriter _colors;
 		[WriteOnly]
-		private NativeList<uint> _bones;
+		private NativeList<uint>.ParallelWriter _bones;
 
-		public CullInvisibleSidesAndBackfaceJob(VoxelsBox voxelsBox, int sideIndex, NativeSlice<byte3> inputIndices, NativeArray<byte> voxelBoxMasks, NativeArray<float3> inputPositions, NativeArray<float3> inputColors, NativeArray<uint> inputBones, NativeList<float3> positions, NativeList<float3> colors, NativeList<uint> bones, NativeSlice<VoxelsBounds> visibilityBounds) {
+		public CullInvisibleSidesAndBackfaceJob(VoxelsBox voxelsBox, int sideIndex, NativeSlice<byte3> inputIndices,
+			NativeArray<byte> voxelBoxMasks, NativeArray<float3> inputPositions, NativeArray<float3> inputColors,
+			NativeArray<uint> inputBones, NativeList<float3>.ParallelWriter positions, NativeList<float3>.ParallelWriter colors,
+			NativeList<uint>.ParallelWriter bones, NativeSlice<VoxelsBounds> visibilityBounds) {
 			_voxelsBox = voxelsBox;
 			_sideMask = 1 << (sideIndex + 1);
 			_inputIndices = inputIndices;
