@@ -23,10 +23,15 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 			_min = math.min(_min, point);
 			_max = math.max(_max, point);
 		}
-
+		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Contains(int3 point) {
-			return (point >= _min) is {x: true, y: true, z: true} && (point <= _max) is {x: true, y: true, z: true};
+			if (point.x < _min.x) return false;
+			if (point.y < _min.y) return false;
+			if (point.z < _min.z) return false;
+			if (point.x > _max.x) return false;
+			if (point.y > _max.y) return false;
+			return point.z <= _max.z;
 		}
 	}
 }

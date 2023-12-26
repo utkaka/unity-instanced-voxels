@@ -2,6 +2,7 @@ using System;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -30,6 +31,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		private NativeList<float3> _positionsListFloat;
 		private NativeList<float3> _colorsListFloat;
 		private NativeList<uint> _bonesListInt;
+		private NativeList<int> _visibleIndices;
 
 
 		public QuadRenderer(int sideIndex, float voxelSize, CullingOptions cullingOptions) {
@@ -52,6 +54,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			_positionsListFloat = new NativeList<float3>(positionsCount, Allocator.Persistent);
 			_colorsListFloat = new NativeList<float3>(positionsCount, Allocator.Persistent);
 			_bonesListInt = new NativeList<uint>(positionsCount, Allocator.Persistent);
+			_visibleIndices = new NativeList<int>(positionsCount, Allocator.Persistent);
 			
 			if (_cullingOptions == CullingOptions.InnerVoxels) {
 				var cullInvisibleVoxelsJob = new CullInvisibleVoxelsJob(box, positionsSlice, voxelBoxMasks,
@@ -70,11 +73,15 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			} else if (_cullingOptions == CullingOptions.InnerSidesAndBackface || _cullingOptions == CullingOptions.InnerSidesAndBackfaceUpdate) {
 				var bonesCount = visibilityBounds.Length / 6;
 				handle.Complete();
-				var cullInvisibleSidesJob = new CullInvisibleSidesAndBackfaceJob(box, _sideIndex, outerVoxels.AsArray(), positionsSlice, voxelBoxMasks,
+
+				var cullInvisibleSidesJob = new CullInvisibleSidesIndicesJob(_sideIndex, box, outerVoxels.AsArray(), positionsSlice,
+					voxelBoxMasks, _visibleIndices);
+				cullInvisibleSidesJob.Schedule(outerVoxels.Length, default).Complete();
+				
+				var cullBackfaceJob = new CullBackfaceJob(_visibleIndices.AsArray(), positionsSlice,
 					positionsArrayFloat, colorsArrayFloat, bonesArrayInt, _positionsListFloat, _colorsListFloat,
 					_bonesListInt, new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * _sideIndex, bonesCount));
-				positionsCount = outerVoxels.Length;
-				handle = cullInvisibleSidesJob.Schedule(positionsCount, default);
+				handle = cullBackfaceJob.Schedule(_visibleIndices.Length, default);
 					/*positionsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, );*/
 				handle.Complete();
 				UpdateVoxels();
@@ -92,20 +99,23 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			NativeArray<uint> bonesArrayInt, NativeArray<byte> voxelBoxMasks,
 			NativeArray<VoxelsBounds> visibilityBounds, JobHandle handle) {
 			
+			//if (!_cullingHandle.IsCompleted) return;
+			
 			_positionsListFloat.Clear();
 			_bonesListInt.Clear();
 			_colorsListFloat.Clear();
 			
 			var bonesCount = visibilityBounds.Length / 6;
-			var cullInvisibleSidesJob = new CullInvisibleSidesAndBackfaceJob(box, _sideIndex, outerIndices, positionsSlice, voxelBoxMasks,
+			var cullInvisibleSidesJob = new CullBackfaceJob(_visibleIndices, positionsSlice,
 				positionsArrayFloat, colorsArrayFloat, bonesArrayInt, _positionsListFloat, _colorsListFloat,
 				_bonesListInt, new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * _sideIndex, bonesCount));
 			//_cullingHandle = handle;
-			_cullingHandle = cullInvisibleSidesJob.Schedule(positionsCount,
-				/*positionsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, */handle);
+			_cullingHandle = cullInvisibleSidesJob.Schedule(_visibleIndices.Length,
+				/*_visibleIndices.Length / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, */handle);
 		}
 		
 		public void UpdateVoxels() {
+			//if (!_cullingHandle.IsCompleted) return;
 			_cullingHandle.Complete();
 			_positionsCount = _positionsListFloat.Length;
 			if (_positionsCount == 0) {
@@ -141,6 +151,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			_positionsListFloat.Dispose();
 			_colorsListFloat.Dispose();
 			_bonesListInt.Dispose();
+
+			_visibleIndices.Dispose();
 		}
 	}
 }
