@@ -453,7 +453,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5241174b8f2c4a4d82a759a990a0d2a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _angle: 12
   _speedMod: 12
   _point: {x: 0, y: 0, z: 0}
 --- !u!1 &787055370

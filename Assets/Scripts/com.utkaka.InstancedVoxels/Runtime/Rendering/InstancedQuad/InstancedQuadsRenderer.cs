@@ -46,6 +46,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		private NativeArray<float3> _colorsArrayFloat;
 		private NativeArray<uint> _bonesArrayInt;
 		private NativeArray<byte> _voxelBoxMasks;
+		private NativeList<int> _outerVoxels;
 
 
 		public void Init(Voxels voxels, CullingOptions cullingOptions) {
@@ -114,6 +115,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 				: new NativeArray<VoxelsBounds>(0, Allocator.Persistent);
 			
 			if (_cullingOptions == CullingOptions.InnerSidesAndBackface || _cullingOptions == CullingOptions.InnerSidesAndBackfaceUpdate) {
+				_outerVoxels = new NativeList<int>(_positionsCount, Allocator.Persistent);
+				var cullInnerVoxelsJob = new CullInnerVoxelsJob(_box, _positionsSlice, _voxelBoxMasks, _outerVoxels);
+				handle = cullInnerVoxelsJob.Schedule(_positionsCount, handle);
+				handle.Complete();
 				var cameraPosition = Camera.main.transform.position;
 				var cameraForward = Camera.main.transform.forward;
 				JobHandle visibilityBoundsHandle = default;
@@ -136,7 +141,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].InitVoxels(_positionsCount, _box, _positionsSlice, _positionsArrayFloat, _colorsArrayFloat,
-					_bonesArrayInt, _voxelBoxMasks, _visibilityBounds, handle);
+					_bonesArrayInt, _voxelBoxMasks, _visibilityBounds, _outerVoxels, handle);
 			}
 			
 			colorsArray.Dispose();
@@ -168,7 +173,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 						new NativeSlice<VoxelsBounds>(_visibilityBounds, _bonesCount * i, _bonesCount));
 				var visibilityBoundsHandle = calculateVisibilityBoundsJob.Schedule(_bonesCount,
 					_bonesCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount);
-				_quadRenderers[i].CullingUpdate(_positionsCount, _box, _positionsSlice, _positionsArrayFloat, _colorsArrayFloat,
+				_quadRenderers[i].CullingUpdate(_outerVoxels.Length, _box, _outerVoxels, _positionsSlice, _positionsArrayFloat, _colorsArrayFloat,
 					_bonesArrayInt, _voxelBoxMasks, _visibilityBounds, visibilityBoundsHandle);
 			}
 		}
@@ -216,6 +221,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].Dispose();
 			}
+
+			if (_outerVoxels.IsCreated) _outerVoxels.Dispose();
+			
 			_bonePositionsBuffer?.Dispose();
 			_bonePositionsAnimationBuffer?.Dispose();
 			_boneRotationsAnimationBuffer?.Dispose();
