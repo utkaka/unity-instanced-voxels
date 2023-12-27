@@ -23,9 +23,12 @@ namespace com.utkaka.InstancedVoxels.Tests {
 		protected IEnumerator Test(RendererTestCase testCase) {
 			var sampleGroups = new []{
 				new SampleGroup("PlayerLoop", SampleUnit.Microsecond), 
-				//new SampleGroup("Gfx.WaitForPresentOnGfxThread", SampleUnit.Microsecond),
-				new SampleGroup("GfxDeviceMetal.WaitForLastPresent", SampleUnit.Microsecond)
+				new SampleGroup("Gfx.WaitForPresentOnGfxThread", SampleUnit.Microsecond),
+				//new SampleGroup("GfxDeviceMetal.WaitForLastPresent", SampleUnit.Microsecond)
+				//new SampleGroup("GfxDeviceVulkan.WaitForLastPresent", SampleUnit.Microsecond)
 			};
+
+			Application.targetFrameRate = 5000;
 			
 			var cameraTransform = new GameObject("Main Camera", typeof(Camera)).transform;
 			cameraTransform.gameObject.tag = "MainCamera";

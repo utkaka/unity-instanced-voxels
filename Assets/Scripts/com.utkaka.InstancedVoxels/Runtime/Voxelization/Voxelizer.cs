@@ -287,7 +287,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization {
 		}
 		
 		private VoxelsAnimation BakeAnimation(NativeHashMap<int2, int> bonesMapping) {
-			var bonesCount = bonesMapping.Count();
+			var bonesCount = bonesMapping.Count;
 			
 			var initialPositions = new float3[bonesCount];
 			var initialRotations = new Quaternion[bonesCount];
