@@ -1,36 +1,24 @@
 using System;
-using com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedCube;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 	public class QuadRenderer : IDisposable {
-		private static readonly int VoxelPositionsBuffer = Shader.PropertyToID("voxel_positions_buffer");
-		private static readonly int VoxelBonesBuffer = Shader.PropertyToID("voxel_bones_buffer");
-		private static readonly int VoxelColorsBuffer = Shader.PropertyToID("voxel_colors_buffer");
+		private static readonly int VoxelPositionsBuffer = Shader.PropertyToID("voxels_buffer");
 		
 		private readonly int _sideIndex;
 		private readonly Material _material;
 		private readonly Mesh _mesh;
 		private readonly CullingOptions _cullingOptions;
 		
-		private int _positionsCount;
+		private int _voxelsCount;
 
 		private JobHandle _cullingHandle;
-		private ComputeBuffer _positionBuffer;
-		private ComputeBuffer _bonesBuffer;
-		private ComputeBuffer _colorsBuffer;
-		private ComputeBuffer _bonePositionsBuffer;
-		private ComputeBuffer _bonePositionsAnimationBuffer;
-		private ComputeBuffer _boneRotationsAnimationBuffer;
-		private NativeList<float3> _positionsListFloat;
-		private NativeList<float3> _colorsListFloat;
-		private NativeList<uint> _bonesListInt;
+		private ComputeBuffer _voxelsBuffer;
+		private NativeList<ShaderVoxel> _shaderVoxelsList;
 		private NativeList<int> _visibleIndices;
 
 
@@ -42,94 +30,64 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		}
 
 		public void Render(Bounds bounds) {
-			if (_positionsCount == 0) return;
+			if (_voxelsCount == 0) return;
 			Graphics.DrawMeshInstancedProcedural(_mesh, 0, _material,
-				bounds, _positionsCount, null, ShadowCastingMode.Off, false);
+				bounds, _voxelsCount, null, ShadowCastingMode.Off, false);
 		}
 
-		public void InitVoxels(int positionsCount, VoxelsBox box, NativeSlice<byte3> positionsSlice,
-			NativeArray<float3> positionsArrayFloat, NativeArray<float3> colorsArrayFloat,
-			NativeArray<uint> bonesArrayInt, NativeArray<byte> voxelBoxMasks,
+		public void InitVoxels(int positionsCount, VoxelsBox box, NativeArray<ShaderVoxel> shaderVoxels, NativeArray<byte> voxelBoxMasks,
 			NativeArray<VoxelsBounds> visibilityBounds, NativeList<int> outerVoxels, JobHandle handle) {
-			_positionsListFloat = new NativeList<float3>(positionsCount, Allocator.Persistent);
-			_colorsListFloat = new NativeList<float3>(positionsCount, Allocator.Persistent);
-			_bonesListInt = new NativeList<uint>(positionsCount, Allocator.Persistent);
+			_shaderVoxelsList = new NativeList<ShaderVoxel>(positionsCount, Allocator.Persistent);
 			_visibleIndices = new NativeList<int>(positionsCount, Allocator.Persistent);
 			
-			if (_cullingOptions == CullingOptions.InnerVoxels) {
-				var cullInvisibleVoxelsJob = new CullInvisibleVoxelsJob(box, positionsSlice, voxelBoxMasks,
-					positionsArrayFloat, colorsArrayFloat, bonesArrayInt, _positionsListFloat, _colorsListFloat,
-					_bonesListInt);
-				handle = cullInvisibleVoxelsJob.Schedule(positionsCount, handle);
-				handle.Complete();
-				UpdateVoxels();
-			} else if (_cullingOptions == CullingOptions.InnerSides) {
-				var cullInvisibleSidesJob = new CullInvisibleSidesJob(box, _sideIndex, positionsSlice, voxelBoxMasks,
-					positionsArrayFloat, colorsArrayFloat, bonesArrayInt, _positionsListFloat, _colorsListFloat,
-					_bonesListInt);
+			if (_cullingOptions == CullingOptions.InnerSides) {
+				var cullInvisibleSidesJob = new CullInvisibleSidesJob(box, _sideIndex, shaderVoxels, voxelBoxMasks, _shaderVoxelsList);
 				handle = cullInvisibleSidesJob.Schedule(positionsCount, handle);
 				handle.Complete();
 				UpdateVoxels();
-			} else if (_cullingOptions == CullingOptions.InnerSidesAndBackface || _cullingOptions == CullingOptions.InnerSidesAndBackfaceUpdate) {
+			} else {
 				var bonesCount = visibilityBounds.Length / 6;
 				handle.Complete();
-
-				var cullInvisibleSidesJob = new CullInvisibleSidesIndicesJob(_sideIndex, box, outerVoxels.AsArray(), positionsSlice,
+				
+				var cullInvisibleSidesJob = new CullInvisibleSidesIndicesJob(_sideIndex, box, outerVoxels.AsArray(), shaderVoxels,
 					voxelBoxMasks, _visibleIndices);
 				cullInvisibleSidesJob.Schedule(outerVoxels.Length, default).Complete();
-				
-				var cullBackfaceJob = new CullBackfaceJob(_visibleIndices.AsArray(), positionsSlice,
-					positionsArrayFloat, colorsArrayFloat, bonesArrayInt, _positionsListFloat, _colorsListFloat,
-					_bonesListInt, new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * _sideIndex, bonesCount));
+
+				var cullBackfaceJob = new CullBackfaceJob(_visibleIndices.AsArray(), shaderVoxels,
+					new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * _sideIndex, bonesCount),
+					_shaderVoxelsList);
 				handle = cullBackfaceJob.Schedule(_visibleIndices.Length, default);
 					/*positionsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, );*/
 				handle.Complete();
 				UpdateVoxels();
-			} else {
-				handle.Complete();
-				_positionsCount = positionsArrayFloat.Length;
-				SetBufferData(VoxelPositionsBuffer, ref _positionBuffer, positionsArrayFloat, 12);
-				SetBufferData(VoxelBonesBuffer, ref _bonesBuffer, bonesArrayInt, 4);
-				SetBufferData(VoxelColorsBuffer, ref _colorsBuffer, colorsArrayFloat, 12);
 			}
 		}
 
-		public void CullingUpdate(int positionsCount, VoxelsBox box, NativeList<int> outerIndices, NativeSlice<byte3> positionsSlice,
-			NativeArray<float3> positionsArrayFloat, NativeArray<float3> colorsArrayFloat,
-			NativeArray<uint> bonesArrayInt, NativeArray<byte> voxelBoxMasks,
-			NativeArray<VoxelsBounds> visibilityBounds, JobHandle handle) {
+		public void CullingUpdate(NativeArray<ShaderVoxel> shaderVoxels, NativeArray<VoxelsBounds> visibilityBounds, JobHandle handle) {
 			
 			//if (!_cullingHandle.IsCompleted) return;
 			
-			_positionsListFloat.Clear();
-			_bonesListInt.Clear();
-			_colorsListFloat.Clear();
-			
+			_shaderVoxelsList.Clear();
+
 			var bonesCount = visibilityBounds.Length / 6;
-			var cullInvisibleSidesJob = new CullBackfaceJob(_visibleIndices, positionsSlice,
-				positionsArrayFloat, colorsArrayFloat, bonesArrayInt, _positionsListFloat, _colorsListFloat,
-				_bonesListInt, new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * _sideIndex, bonesCount));
+			var cullBackfaceJob = new CullBackfaceJob(_visibleIndices.AsArray(), shaderVoxels,
+				new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * _sideIndex, bonesCount),
+				_shaderVoxelsList);
 			//_cullingHandle = handle;
-			_cullingHandle = cullInvisibleSidesJob.Schedule(_visibleIndices.Length,
+			_cullingHandle = cullBackfaceJob.Schedule(_visibleIndices.Length,
 				/*_visibleIndices.Length / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, */handle);
 		}
 		
 		public void UpdateVoxels() {
 			//if (!_cullingHandle.IsCompleted) return;
 			_cullingHandle.Complete();
-			_positionsCount = _positionsListFloat.Length;
-			if (_positionsCount == 0) {
-				_positionBuffer?.Dispose();
-				_bonesBuffer?.Dispose();
-				_colorsBuffer?.Dispose();
-				_positionBuffer = null;
-				_bonesBuffer = null;
-				_colorsBuffer = null;
+			_voxelsCount = _shaderVoxelsList.Length;
+			if (_voxelsCount == 0) {
+				_voxelsBuffer?.Dispose();
+				_voxelsBuffer = null;
 				return;
 			}
-			SetBufferData(VoxelPositionsBuffer, ref _positionBuffer, _positionsListFloat.AsArray(), 12);
-			SetBufferData(VoxelBonesBuffer, ref _bonesBuffer, _bonesListInt.AsArray(), 4);
-			SetBufferData(VoxelColorsBuffer, ref _colorsBuffer, _colorsListFloat.AsArray(), 12);
+			SetBufferData(VoxelPositionsBuffer, ref _voxelsBuffer, _shaderVoxelsList.AsArray(), 8);
 		}
 
 		private void SetBufferData<T>(int nameId, ref ComputeBuffer buffer, NativeArray<T> data, int stride) where T : struct {
@@ -141,17 +99,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 
 		public void Dispose() {
 			_cullingHandle.Complete();
-			_positionBuffer?.Dispose();
-			_bonesBuffer?.Dispose();
-			_colorsBuffer?.Dispose();
-			_bonePositionsBuffer?.Dispose();
-			_bonePositionsAnimationBuffer?.Dispose();
-			_boneRotationsAnimationBuffer?.Dispose();
-
-			_positionsListFloat.Dispose();
-			_colorsListFloat.Dispose();
-			_bonesListInt.Dispose();
-
+			_voxelsBuffer?.Dispose();
+			_shaderVoxelsList.Dispose();
 			_visibleIndices.Dispose();
 		}
 	}

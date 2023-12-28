@@ -10,49 +10,28 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		[ReadOnly]
 		private NativeArray<int> _outerVoxelsIndices;
 		[ReadOnly]
-		private NativeSlice<byte3> _inputIndices;
-		
-		[ReadOnly]
-		private NativeArray<float3> _inputPositions;
-		[ReadOnly]
-		private NativeArray<float3> _inputColors;
-		[ReadOnly]
-		private NativeArray<uint> _inputBones;
+		private NativeArray<ShaderVoxel> _inputVoxels;
 		[ReadOnly]
 		private NativeSlice<VoxelsBounds> _visibilityBounds;
 		
 		[WriteOnly]
-		private NativeList<float3> _positions;
-		[WriteOnly]
-		private NativeList<float3> _colors;
-		[WriteOnly]
-		private NativeList<uint> _bones;
+		private NativeList<ShaderVoxel> _outputVoxels;
 
-		public CullBackfaceJob(NativeArray<int> outerVoxelsIndices, NativeSlice<byte3> inputIndices, NativeArray<float3> inputPositions, NativeArray<float3> inputColors,
-			NativeArray<uint> inputBones, NativeList<float3> positions, NativeList<float3> colors,
-			NativeList<uint> bones, NativeSlice<VoxelsBounds> visibilityBounds) {
+		public CullBackfaceJob(NativeArray<int> outerVoxelsIndices, NativeArray<ShaderVoxel> inputVoxels,
+			NativeSlice<VoxelsBounds> visibilityBounds, NativeList<ShaderVoxel> outputVoxels) {
 			_outerVoxelsIndices = outerVoxelsIndices;
-			_inputIndices = inputIndices;
-			_inputPositions = inputPositions;
-			_inputColors = inputColors;
-			_inputBones = inputBones;
-			_positions = positions;
-			_colors = colors;
-			_bones = bones;
+			_inputVoxels = inputVoxels;
 			_visibilityBounds = visibilityBounds;
+			_outputVoxels = outputVoxels;
 		}
 
 		public void Execute(int index) {
 			index = _outerVoxelsIndices[index];
-			var voxelIndices = _inputIndices[index];
-			var bone = _inputBones[index];
-			if (!_visibilityBounds[(int)bone].Contains(new int3(voxelIndices.x, voxelIndices.y, voxelIndices.z))) return;
-			//var position = _inputPositions[index];
-			//var color = _inputColors[index];
-			_positions.AddNoResize(_inputPositions[index]);
-			_colors.AddNoResize(_inputColors[index]);
-			_bones.AddNoResize(bone);
-			//_colors.AddNoResize(color);
+			var inputVoxel = _inputVoxels[index];
+			var voxelIndices = inputVoxel.GetPosition();
+			var bone = inputVoxel.GetBone();
+			if (!_visibilityBounds[bone].Contains(new int3(voxelIndices.x, voxelIndices.y, voxelIndices.z))) return;
+			_outputVoxels.AddNoResize(inputVoxel);
 		}
 	}
 }

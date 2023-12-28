@@ -22,10 +22,12 @@ namespace com.utkaka.InstancedVoxels.Tests {
 		
 		protected IEnumerator Test(RendererTestCase testCase) {
 			var sampleGroups = new []{
-				new SampleGroup("PlayerLoop", SampleUnit.Microsecond), 
-				new SampleGroup("Gfx.WaitForPresentOnGfxThread", SampleUnit.Microsecond),
-				//new SampleGroup("GfxDeviceMetal.WaitForLastPresent", SampleUnit.Microsecond)
-				//new SampleGroup("GfxDeviceVulkan.WaitForLastPresent", SampleUnit.Microsecond)
+				new SampleGroup("PlayerLoop", SampleUnit.Microsecond),
+#if UNITY_STANDALONE_OSX
+				new SampleGroup("GfxDeviceMetal.WaitForLastPresent", SampleUnit.Microsecond)
+#else
+				new SampleGroup("Gfx.WaitForPresentOnGfxThread", SampleUnit.Microsecond)
+#endif
 			};
 
 			Application.targetFrameRate = 5000;
