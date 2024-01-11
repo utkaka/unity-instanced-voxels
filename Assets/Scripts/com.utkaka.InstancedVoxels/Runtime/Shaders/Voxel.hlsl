@@ -17,7 +17,7 @@ float4 voxel_color;
 
 void configure_procedural () {
     #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
-    const Voxel voxel = voxels_buffer[unity_InstanceID];
+    Voxel voxel = voxels_buffer[unity_InstanceID];
     voxel_position = float3((voxel.position_bone & 65280u) >> 8, (voxel.position_bone & 16711680u) >> 16, (voxel.position_bone & 4278190080u) >> 24);
     voxel_bone = voxel.position_bone & 255u;
     float3 input_color = float3(voxel.color & 255u, (voxel.color & 65280u) >> 8, (voxel.color & 16711680u) >> 16) / 255;

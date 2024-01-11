@@ -13,9 +13,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		private readonly Material _material;
 		private readonly Mesh _mesh;
 		private readonly CullingOptions _cullingOptions;
-		
-		private int _voxelsCount;
 
+		private bool _isDirty;
+		private int _voxelsCount;
 		private JobHandle _cullingHandle;
 		private ComputeBuffer _voxelsBuffer;
 		private NativeList<ShaderVoxel> _shaderVoxelsList;
@@ -37,6 +37,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 
 		public void InitVoxels(int positionsCount, VoxelsBox box, NativeArray<ShaderVoxel> shaderVoxels, NativeArray<byte> voxelBoxMasks,
 			NativeArray<VoxelsBounds> visibilityBounds, NativeList<int> outerVoxels, JobHandle handle) {
+			_isDirty = true;
 			_shaderVoxelsList = new NativeList<ShaderVoxel>(positionsCount, Allocator.Persistent);
 			_visibleIndices = new NativeList<int>(positionsCount, Allocator.Persistent);
 			
@@ -64,7 +65,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		}
 
 		public void CullingUpdate(NativeArray<ShaderVoxel> shaderVoxels, NativeArray<VoxelsBounds> visibilityBounds, JobHandle handle) {
-			
+			_isDirty = true;
 			//if (!_cullingHandle.IsCompleted) return;
 			
 			_shaderVoxelsList.Clear();
@@ -79,6 +80,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		}
 		
 		public void UpdateVoxels() {
+			if (!_isDirty) return;
+			_isDirty = false;
 			//if (!_cullingHandle.IsCompleted) return;
 			_cullingHandle.Complete();
 			_voxelsCount = _shaderVoxelsList.Length;

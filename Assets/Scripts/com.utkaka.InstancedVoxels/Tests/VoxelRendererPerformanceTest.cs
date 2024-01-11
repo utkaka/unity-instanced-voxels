@@ -1,4 +1,5 @@
 using System.Collections;
+using com.utkaka.InstancedVoxels.Runtime;
 using com.utkaka.InstancedVoxels.Runtime.Rendering;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.PerformanceTesting;
@@ -32,7 +33,7 @@ namespace com.utkaka.InstancedVoxels.Tests {
 
 			Application.targetFrameRate = 5000;
 			
-			var cameraTransform = new GameObject("Main Camera", typeof(Camera)).transform;
+			var cameraTransform = new GameObject("Main Camera", typeof(Camera), typeof(RotatingCamera)).transform;
 			cameraTransform.gameObject.tag = "MainCamera";
 			cameraTransform.position = new Vector3(0.38f, 1.17f, -1.44f);
 			cameraTransform.rotation = Quaternion.Euler(32.06f, -12.81f, 0.0f);
@@ -40,7 +41,7 @@ namespace com.utkaka.InstancedVoxels.Tests {
 			var renderer = new GameObject("Renderer", typeof(T))
 				.GetComponent<T>();
 			
-			var voxels = Resources.Load<Voxels>($"Cube_{testCase.VoxelSize}");
+			var voxels = Resources.Load<Voxels>($"{testCase.VoxelSize}");
 			renderer.Init(voxels, testCase.CullingOptions);
 			yield return Measure.Frames()
 				.WarmupCount(60)

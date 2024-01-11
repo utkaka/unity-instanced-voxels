@@ -651,7 +651,7 @@
     "m_SourceType": 1,
     "m_FunctionName": "InjectVertexPragmas",
     "m_FunctionSource": "",
-    "m_FunctionBody": "#pragma instancing_options assumeuniformscaling nolodfade nolightprobe nolightmap procedural:configure_procedural\nOut = In;"
+    "m_FunctionBody": "#pragma instancing_options procedural:configure_procedural\nOut = In;"
 }
 
 {

@@ -8,21 +8,24 @@ using UnityEngine.TestTools;
 namespace com.utkaka.InstancedVoxels.Tests {
 	public class InstancedQuadsRendererTest : VoxelRendererPerformanceTest<InstancedQuadsRenderer> {
 		private static IEnumerable TestCases() {
-			yield return new RendererTestCase("008", CullingOptions.InnerSides);
-			yield return new RendererTestCase("004", CullingOptions.InnerSides);
-			yield return new RendererTestCase("002", CullingOptions.InnerSides);
-			yield return new RendererTestCase("001", CullingOptions.InnerSides);
-			yield return new RendererTestCase("1_div_255", CullingOptions.InnerSides);
-			yield return new RendererTestCase("008", CullingOptions.InnerSidesAndBackface);
-			yield return new RendererTestCase("004", CullingOptions.InnerSidesAndBackface);
-			yield return new RendererTestCase("002", CullingOptions.InnerSidesAndBackface);
-			yield return new RendererTestCase("001", CullingOptions.InnerSidesAndBackface);
-			yield return new RendererTestCase("1_div_255", CullingOptions.InnerSidesAndBackface);
-			yield return new RendererTestCase("008", CullingOptions.InnerSidesAndBackfaceUpdate);
-			yield return new RendererTestCase("004", CullingOptions.InnerSidesAndBackfaceUpdate);
-			yield return new RendererTestCase("002", CullingOptions.InnerSidesAndBackfaceUpdate);
-			yield return new RendererTestCase("001", CullingOptions.InnerSidesAndBackfaceUpdate);
-			yield return new RendererTestCase("1_div_255", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("Cube_008", CullingOptions.InnerSides);
+			yield return new RendererTestCase("Cube_004", CullingOptions.InnerSides);
+			yield return new RendererTestCase("Cube_002", CullingOptions.InnerSides);
+			yield return new RendererTestCase("Cube_001", CullingOptions.InnerSides);
+			yield return new RendererTestCase("Cube_1_div_255", CullingOptions.InnerSides);
+			yield return new RendererTestCase("Spider_00072", CullingOptions.InnerSides);
+			yield return new RendererTestCase("Cube_008", CullingOptions.InnerSidesAndBackface);
+			yield return new RendererTestCase("Cube_004", CullingOptions.InnerSidesAndBackface);
+			yield return new RendererTestCase("Cube_002", CullingOptions.InnerSidesAndBackface);
+			yield return new RendererTestCase("Cube_001", CullingOptions.InnerSidesAndBackface);
+			yield return new RendererTestCase("Cube_1_div_255", CullingOptions.InnerSidesAndBackface);
+			yield return new RendererTestCase("Spider_00072", CullingOptions.InnerSidesAndBackface);
+			yield return new RendererTestCase("Cube_008", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("Cube_004", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("Cube_002", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("Cube_001", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("Cube_1_div_255", CullingOptions.InnerSidesAndBackfaceUpdate);
+			yield return new RendererTestCase("Spider_00072", CullingOptions.InnerSidesAndBackfaceUpdate);
 		}
 
 		[UnityTest, Performance]

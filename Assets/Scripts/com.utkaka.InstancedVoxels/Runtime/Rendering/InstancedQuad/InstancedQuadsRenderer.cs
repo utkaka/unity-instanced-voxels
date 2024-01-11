@@ -57,6 +57,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 		private NativeArray<ShaderVoxel> _shaderVoxelsArray;
 		
 		private NativeArray<VoxelsBounds> _visibilityBounds;
+		private NativeArray<VoxelsBounds> _previousVisibilityBounds;
 		
 		private NativeArray<byte> _voxelBoxMasks;
 		private NativeList<int> _outerVoxels;
@@ -131,6 +132,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			_visibilityBounds = _cullingOptions == CullingOptions.InnerSidesAndBackface || _cullingOptions == CullingOptions.InnerSidesAndBackfaceUpdate
 				? new NativeArray<VoxelsBounds>(6 * _bonesCount, Allocator.Persistent)
 				: new NativeArray<VoxelsBounds>(0, Allocator.Persistent);
+			_previousVisibilityBounds = new NativeArray<VoxelsBounds>(_visibilityBounds.Length, Allocator.Persistent);
 			
 			if (_cullingOptions == CullingOptions.InnerSidesAndBackface || _cullingOptions == CullingOptions.InnerSidesAndBackfaceUpdate) {
 				_outerVoxels = new NativeList<int>(_positionsCount, Allocator.Persistent);
@@ -178,15 +180,26 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			if (_cullingOptions != CullingOptions.InnerSidesAndBackfaceUpdate) return;
 			var cameraPosition = Camera.main.transform.position;
 			var cameraForward = Camera.main.transform.forward;
+			NativeArray<VoxelsBounds>.Copy(_visibilityBounds, _previousVisibilityBounds);
 			for (var i = 0; i < 6; i++) {
+				var previousVisibilityBoundsSlice = new NativeSlice<VoxelsBounds>(_previousVisibilityBounds, _bonesCount * i, _bonesCount);
+				var currentVisibilityBoundsSlice = new NativeSlice<VoxelsBounds>(_visibilityBounds, _bonesCount * i, _bonesCount);
 				var calculateVisibilityBoundsJob =
 					new CalculateVisibilityBoundsJob(_voxelSize, _startPosition, VoxelMeshGenerator.GetSideNormal(i), _box, cameraPosition, cameraForward,
 						_animationLength, _animationCurrentFrame, _animationNextFrame, _animationLerpRatio,
 						_bonePositionsArray, _boneAnimationPositionsArray, _boneAnimationRotationsArray,
-						new NativeSlice<VoxelsBounds>(_visibilityBounds, _bonesCount * i, _bonesCount));
+						currentVisibilityBoundsSlice);
 				var visibilityBoundsHandle = calculateVisibilityBoundsJob.Schedule(_bonesCount,
 					_bonesCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount);
-				_quadRenderers[i].CullingUpdate(_shaderVoxelsArray, _visibilityBounds, visibilityBoundsHandle);
+				var boundsChanged = new NativeArray<bool>(1, Allocator.TempJob);
+				var checkVisibilityBoundsChangedJob = new CheckVisibilityBoundsChangedJob(previousVisibilityBoundsSlice,
+					currentVisibilityBoundsSlice, boundsChanged);
+				visibilityBoundsHandle = checkVisibilityBoundsChangedJob.Schedule(_bonesCount, visibilityBoundsHandle);
+				visibilityBoundsHandle.Complete();
+				if (boundsChanged[0]) {
+					_quadRenderers[i].CullingUpdate(_shaderVoxelsArray, _visibilityBounds, visibilityBoundsHandle);
+				}
+				boundsChanged.Dispose();
 			}
 		}
 		
@@ -248,6 +261,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			_boneAnimationRotationsArray.Dispose();
 			
 			_visibilityBounds.Dispose();
+            _previousVisibilityBounds.Dispose();
 			_shaderVoxelsArray.Dispose();
 
 			_voxelBoxMasks.Dispose();

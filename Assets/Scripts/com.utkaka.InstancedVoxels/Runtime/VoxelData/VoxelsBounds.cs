@@ -8,6 +8,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 		private int3 _min;
 		private int3 _max;
 
+		public int3 Min => _min;
+
+		public int3 Max => _max;
+
 		public VoxelsBounds(int3 point) {
 			_min = point;
 			_max = point;

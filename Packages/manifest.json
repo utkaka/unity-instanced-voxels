@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.tayx.graphy": "3.0.5",
+    "com.tayx.graphy": "3.0.4",
     "com.unity.collections": "2.1.4",
     "com.unity.feature.development": "1.0.1",
     "com.unity.mobile.android-logcat": "1.4.0",
