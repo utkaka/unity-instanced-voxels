@@ -9,7 +9,7 @@ namespace com.utkaka.InstancedVoxels.Runtime {
 		private Vector3 _point;
 	
 		private void Start () {
-			Application.targetFrameRate = 60;
+			//Application.targetFrameRate = 60;
 			transform.LookAt(_point);
 		}
 
