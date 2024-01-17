@@ -15,7 +15,7 @@ namespace com.utkaka.InstancedVoxels.Runtime {
 
 		public void Update () {
 			//transform.RotateAround (_point,Vector3.up,Time.deltaTime * _speedMod);
-			transform.RotateAround (_point,Vector3.up,6.0f);
+			transform.RotateAround (_point,Vector3.up,1.0f);
 			transform.LookAt(_point);
 		}	
 	}

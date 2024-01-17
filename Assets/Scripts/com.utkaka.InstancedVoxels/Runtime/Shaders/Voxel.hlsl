@@ -13,17 +13,17 @@ StructuredBuffer<float4> bone_rotations_animation_buffer;
 
 float3 voxel_position;
 int voxel_bone;
-float4 voxel_color;
+half4 voxel_color;
 
 void configure_procedural () {
     #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
     Voxel voxel = voxels_buffer[unity_InstanceID];
     voxel_position = float3((voxel.position_bone & 65280u) >> 8, (voxel.position_bone & 16711680u) >> 16, (voxel.position_bone & 4278190080u) >> 24);
     voxel_bone = voxel.position_bone & 255u;
-    float3 input_color = float3(voxel.color & 255u, (voxel.color & 65280u) >> 8, (voxel.color & 16711680u) >> 16) / 255;
+    half3 input_color = half3(half(voxel.color & 255u), half((voxel.color & 65280u) >> 8), half((voxel.color & 16711680u) >> 16)) / half(255);
     // Approximate version from http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
-    input_color = input_color * (input_color * (input_color * 0.305306011 + 0.682171111) + 0.012522878);
-    voxel_color = float4(input_color.x, input_color.y, input_color.z, 1);
+    input_color = input_color * (input_color * (input_color * half(0.305306011) + half(0.682171111)) + half(0.012522878));
+    voxel_color = half4(input_color.x, input_color.y, input_color.z, half(1));
     #endif
 }
 
