@@ -96,13 +96,13 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			var bonesSlice = new NativeSlice<byte>(bonesArray).SliceConvert<byte>();
 
 			_bonePositionsArray = _voxels.Animation.BonesPositions.Length == 0
-				? new NativeArray<float3>(1, Allocator.Persistent)
+				? new NativeArray<float3>(2, Allocator.Persistent)
 				: new NativeArray<float3>(_voxels.Animation.BonesPositions, Allocator.Persistent);
 			_boneAnimationPositionsArray = _voxels.Animation.AnimationBonesPositions.Length == 0
-				? new NativeArray<float3>(1, Allocator.Persistent)
+				? new NativeArray<float3>(2, Allocator.Persistent)
 				: new NativeArray<float3>(_voxels.Animation.AnimationBonesPositions, Allocator.Persistent);
 			_boneAnimationRotationsArray = _voxels.Animation.AnimationBonesRotations.Length == 0
-				? new NativeArray<float4>(1, Allocator.Persistent)
+				? new NativeArray<float4>(2, Allocator.Persistent)
 				: new NativeArray<float4>(_voxels.Animation.AnimationBonesRotations, Allocator.Persistent);
 
 			UpdateBones(_bonePositionsArray, _boneAnimationPositionsArray, _boneAnimationRotationsArray);
