@@ -4,9 +4,8 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
 
-namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
+namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	[BurstCompile]
 	public struct CalculateVisibilityBoundsJob : IJobParallelFor {
 		private readonly float _voxelSize;

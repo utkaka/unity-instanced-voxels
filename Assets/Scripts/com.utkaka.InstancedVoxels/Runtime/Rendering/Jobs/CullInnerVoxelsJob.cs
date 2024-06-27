@@ -3,7 +3,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 
-namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
+namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	[BurstCompile]
 	public struct CullInnerVoxelsJob : IJobFor {
 		private readonly VoxelsBox _voxelsBox;

@@ -2,7 +2,7 @@ using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
 using Unity.Jobs;
 
-namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
+namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	public struct CullInvisibleSidesJob : IJobFor {
 		private readonly VoxelsBox _voxelsBox;
 		private readonly int _sideMask;

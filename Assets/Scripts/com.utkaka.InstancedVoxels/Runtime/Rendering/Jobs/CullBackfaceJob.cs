@@ -4,7 +4,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
+namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	[BurstCompile]
 	public struct CullBackfaceJob : IJobFor {
 		[ReadOnly]
