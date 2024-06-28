@@ -13,22 +13,25 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
         private readonly int _worldToObjectOffset;
         private readonly int _colorOffset;
         [ReadOnly]
-        private NativeList<ShaderVoxel> _inputVoxels;
+        private NativeList<int> _outerVoxelsIndices;
+        [ReadOnly]
+        private NativeArray<ShaderVoxel> _inputVoxels;
 		
         [WriteOnly, NativeDisableParallelForRestriction]
         private NativeArray<float4> _sysmemBuffer;
 
-        public UpdatePositionsJob(float3 startPosition, float voxelSize, int positionsCount, NativeList<ShaderVoxel> inputVoxels, NativeArray<float4> sysmemBuffer) {
+        public UpdatePositionsJob(float3 startPosition, float voxelSize, int positionsCount, NativeList<int> outerVoxelsIndices, NativeArray<ShaderVoxel> inputVoxels, NativeArray<float4> sysmemBuffer) {
             _startPosition = startPosition;
             _voxelSize = voxelSize;
             _worldToObjectOffset = positionsCount * 3;
             _colorOffset = positionsCount * 6;
+            _outerVoxelsIndices = outerVoxelsIndices;
             _inputVoxels = inputVoxels;
             _sysmemBuffer = sysmemBuffer;
         }
 
         public void Execute(int index) {
-            var inputVoxel = _inputVoxels[index];
+            var inputVoxel = _inputVoxels[_outerVoxelsIndices[index]];
             var instanceMatrixOffset = index * 3;
 
             // compute the new current frame matrix
