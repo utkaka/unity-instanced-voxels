@@ -8,24 +8,24 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	public struct CullInnerVoxelsJob : IJobFor {
 		private readonly VoxelsBox _voxelsBox;
 		[ReadOnly]
-		private NativeSlice<byte3> _inputIndices;
+		private NativeArray<ShaderVoxel> _voxels;
 		[ReadOnly, NativeDisableParallelForRestriction]
 		private NativeArray<byte> _voxelBoxMasks;
 		
 		[WriteOnly]
 		private NativeList<int> _outerVoxelsIndices;
 
-		public CullInnerVoxelsJob(VoxelsBox voxelsBox, NativeSlice<byte3> inputIndices, NativeArray<byte> voxelBoxMasks,
+		public CullInnerVoxelsJob(VoxelsBox voxelsBox, NativeArray<ShaderVoxel> voxels, NativeArray<byte> voxelBoxMasks,
 			NativeList<int> outerVoxelsIndices) {
 			_voxelsBox = voxelsBox;
-			_inputIndices = inputIndices;
+			_voxels = voxels;
 			_voxelBoxMasks = voxelBoxMasks;
 			_outerVoxelsIndices = outerVoxelsIndices;
 		}
 
 		public void Execute(int index) {
-			var voxelIndex = _inputIndices[index];
-			if (_voxelBoxMasks[_voxelsBox.GetExtendedVoxelIndex(voxelIndex)] >= 127) return;
+			var voxelPosition = _voxels[index].GetPosition();
+			if (_voxelBoxMasks[_voxelsBox.GetExtendedVoxelIndex(voxelPosition)] >= 127) return;
 			_outerVoxelsIndices.AddNoResize(index);
 		}
 	}

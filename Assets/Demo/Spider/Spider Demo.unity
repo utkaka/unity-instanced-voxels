@@ -421,7 +421,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _voxels: {fileID: 11400000, guid: 456cd23c5461a451ab48804c464c6f57, type: 2}
-  _cullingOptions: 1
   _material: {fileID: 2100000, guid: 89192c7dc97a4433585088c8b5119758, type: 2}
 --- !u!1 &830752716
 GameObject:

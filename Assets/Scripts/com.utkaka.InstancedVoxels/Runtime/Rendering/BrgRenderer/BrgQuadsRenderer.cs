@@ -17,8 +17,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		[SerializeField]
 		private Voxels _voxels;
 		[SerializeField]
-		private CullingOptions _cullingOptions;
-		[SerializeField]
 		private Material _material;
 		
 		private Bounds _bounds;
@@ -53,19 +51,21 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		private NativeArray<byte> _voxelBoxMasks;
 		private NativeList<int> _outerVoxels;
 		
-		private GraphicsBuffer m_GPUPersistentInstanceData;
-		private NativeArray<float4> m_sysmemBuffer;
+		private GraphicsBuffer _graphicsBuffer;
+		private NativeArray<float4> _cpuGraphicsBuffer;
 
 
 		public void Init(Voxels voxels, CullingOptions cullingOptions) {
 			_voxels = voxels;
-			_cullingOptions = cullingOptions;
+			if (_material == null) {
+				_material = new Material(Shader.Find("Universal Render Pipeline/Simple Lit"));
+			}
 		}
-
+		
 		private void Start() {
 			InitVoxels();
 		}
-		
+
 		private void InitVoxels() {
 			_voxelSize = _voxels.VoxelSize;
 			_startPosition = _voxels.StartPosition;
@@ -76,11 +76,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			
 			_animationFrameRate = _voxels.Animation.FrameRate;
 			_animationLength = _voxels.Animation.FramesCount;
-			
-			_quadRenderers = new BrgQuadRenderer[6];
-			for (var i = 0; i < 6; i++) {
-				_quadRenderers[i] = new BrgQuadRenderer(i, _voxelSize, _cullingOptions, _material);
-			}
 			
 			var colorsArray = new NativeArray<byte>(_voxels.Colors, Allocator.TempJob);
 			var colorsSlice = new NativeSlice<byte>(colorsArray).SliceConvert<byte3>();
@@ -118,41 +113,52 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 
 			_bonesCount = _bonePositionsArray.Length;
 			
-			_outerVoxels = new NativeList<int>(_positionsCount, Allocator.Persistent);
-			var cullInnerVoxelsJob = new CullInnerVoxelsJob(_box, positionsSlice, _voxelBoxMasks, _outerVoxels);
-			handle = cullInnerVoxelsJob.Schedule(_positionsCount, handle);
-			handle.Complete();
-
-			_positionsCount = _outerVoxels.Length;
+			Debug.Log("1");
 			
-			m_GPUPersistentInstanceData = new GraphicsBuffer(GraphicsBuffer.Target.Raw, _positionsCount * InstanceSize / 4, 4);
-			
-			// Create system memory copy of big GPU raw buffer
-			m_sysmemBuffer = new NativeArray<float4>(_positionsCount * InstanceSize / 16, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-			
+			_quadRenderers = new BrgQuadRenderer[6];
 			for (var i = 0; i < 6; i++) {
-				_quadRenderers[i].InitVoxels(_positionsCount, _box, _outerVoxels, _shaderVoxelsArray, _voxelBoxMasks,
-					m_GPUPersistentInstanceData);
+				_quadRenderers[i] = new BrgQuadRenderer(i, _voxelSize, _material, _box, _shaderVoxelsArray, _voxelBoxMasks);
 			}
 			
-			var updatePositionsJob = new UpdatePositionsJob(_startPosition, _voxelSize, _positionsCount, _outerVoxels, _shaderVoxelsArray, m_sysmemBuffer);
-			updatePositionsJob.Schedule(_positionsCount,
-				_positionsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle).Complete();
-			UploadGpuData();
-
+			UpdateOuterVoxels(handle);
+			
 			positionsArray.Dispose();
 			colorsArray.Dispose();
 			bonesArray.Dispose();
 
 			voxelBoxBones.Dispose();
 			boneMasks.Dispose();
-
+			
 			_voxels = null;
 		}
-		
-		[BurstCompile]
-		public void UploadGpuData() {
-			m_GPUPersistentInstanceData.SetData(m_sysmemBuffer, 0, 0, m_sysmemBuffer.Length);
+
+		private void UpdateOuterVoxels(JobHandle handle) {
+			if (_outerVoxels.IsCreated) _outerVoxels.Dispose();
+			
+			_outerVoxels = new NativeList<int>(_positionsCount, Allocator.Persistent);
+			var cullInnerVoxelsJob = new CullInnerVoxelsJob(_box, _shaderVoxelsArray, _voxelBoxMasks, _outerVoxels);
+			handle = cullInnerVoxelsJob.Schedule(_positionsCount, handle);
+			handle.Complete();
+			
+			var outerVoxelsCount = _outerVoxels.Length;
+
+			if (_cpuGraphicsBuffer.IsCreated) {
+				_cpuGraphicsBuffer.Dispose();
+				_graphicsBuffer.Dispose();
+			}
+			
+			_cpuGraphicsBuffer = new NativeArray<float4>(outerVoxelsCount * InstanceSize / 16, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+
+			var updatePositionsJob = new UpdatePositionsJob(_startPosition, _voxelSize, outerVoxelsCount, _outerVoxels, _shaderVoxelsArray, _cpuGraphicsBuffer);
+			updatePositionsJob.Schedule(outerVoxelsCount,
+				outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle).Complete();
+			
+			_graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, outerVoxelsCount * InstanceSize / 4, 4);
+			_graphicsBuffer.SetData(_cpuGraphicsBuffer, 0, 0, _cpuGraphicsBuffer.Length);
+			
+			for (var i = 0; i < 6; i++) {
+				_quadRenderers[i].UpdateOuterVoxels(outerVoxelsCount, _outerVoxels, _graphicsBuffer);
+			}
 		}
 
 		private void OnDestroy() {
@@ -174,8 +180,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 
 			_voxelBoxMasks.Dispose();
 			
-			m_GPUPersistentInstanceData.Dispose();
-			m_sysmemBuffer.Dispose();
+			_graphicsBuffer.Dispose();
+			_cpuGraphicsBuffer.Dispose();
 		}
     }
 }
