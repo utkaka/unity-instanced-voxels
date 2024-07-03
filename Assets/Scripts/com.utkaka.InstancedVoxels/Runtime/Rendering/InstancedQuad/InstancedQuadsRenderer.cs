@@ -218,7 +218,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			var wait = new WaitForEndOfFrame();
 			while (true) {
 				yield return wait;
-				_animationTime += _animationFrameRate * Time.deltaTime;
+				//_animationTime += _animationFrameRate * Time.deltaTime;
 				if (_animationTime >= _animationLength) {
 					_animationTime -= _animationLength;
 				}

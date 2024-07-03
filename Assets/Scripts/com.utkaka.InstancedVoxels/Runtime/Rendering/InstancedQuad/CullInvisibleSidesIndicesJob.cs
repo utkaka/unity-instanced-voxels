@@ -3,7 +3,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 
-namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
+namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 	[BurstCompile]
 	public struct CullInvisibleSidesIndicesJob : IJobFor {
 		private readonly int _sideMask;
@@ -30,7 +30,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		}
 
 		public void Execute(int index) {
-			var voxelIndex = _inputVoxels[_outerIndices[index]].GetPosition();
+			index = _outerIndices[index];
+			var voxelIndex = _inputVoxels[index].GetPosition();
 			if ((_voxelBoxMasks[_voxelsBox.GetExtendedVoxelIndex(voxelIndex)] & _sideMask) == _sideMask) return;
 			_visibleVoxelsIndices.AddNoResize(index);
 		}

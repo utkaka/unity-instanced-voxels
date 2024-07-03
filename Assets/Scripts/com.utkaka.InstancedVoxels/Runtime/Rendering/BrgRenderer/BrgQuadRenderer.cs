@@ -4,6 +4,7 @@ using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -16,9 +17,20 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
         
 		private readonly int _sideIndex;
 		private readonly float _voxelSize;
+		private readonly Vector3 _startPosition;
+		private readonly int _bonesCount;
+		private readonly int _animationLength;
+		private readonly int _animationCurrentFrame;
+		private readonly int _animationNextFrame;
+		private float _animationLerpRatio;
 		private readonly VoxelsBox _box;
 		private readonly NativeArray<ShaderVoxel> _voxels;
 		private readonly NativeArray<byte> _voxelBoxMasks;
+		private NativeArray<VoxelsBounds> _visibilityBounds;
+		
+		private readonly NativeArray<float3> _bonePositionsArray;
+		private readonly NativeArray<float3> _boneAnimationPositionsArray;
+		private readonly NativeArray<float4> _boneAnimationRotationsArray;
 		
 		private readonly bool _castShadows;
 		
@@ -28,18 +40,31 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		private BatchID _batchID;
 
 		private JobHandle _updateOuterVoxelsHandle;
-		
-		private NativeList<int> _sideVoxelsList;
-		//private NativeList<int> _visibleIndices;
 
-		public BrgQuadRenderer(int sideIndex, float voxelSize, Material material, VoxelsBox box,
-			NativeArray<ShaderVoxel> voxels, NativeArray<byte> voxelBoxMasks) {
+		private NativeArray<int> _outerVoxelsIndices;
+		private NativeList<int> _sideVoxelsIndices;
+
+		public BrgQuadRenderer(int sideIndex, float voxelSize, Vector3 startPosition, int bonesCount,
+			int animationLength, Material material, VoxelsBox box,
+			NativeArray<ShaderVoxel> voxels, NativeArray<byte> voxelBoxMasks, NativeArray<float3> bonePositionsArray,
+			NativeArray<float3> boneAnimationPositionsArray, NativeArray<float4> boneAnimationRotationsArray) {
 			_castShadows = false;
 			_sideIndex = sideIndex;
 			_voxelSize = voxelSize;
 			_box = box;
 			_voxels = voxels;
 			_voxelBoxMasks = voxelBoxMasks;
+			_bonePositionsArray = bonePositionsArray;
+			_boneAnimationPositionsArray = boneAnimationPositionsArray;
+			_boneAnimationRotationsArray = boneAnimationRotationsArray;
+			_startPosition = startPosition;
+			_bonesCount = bonesCount;
+			_animationLength = animationLength;
+			_animationCurrentFrame = 0;
+			_animationNextFrame = 1;
+			_animationLerpRatio = 0.0f;
+
+			_visibilityBounds = new NativeArray<VoxelsBounds>(_bonesCount, Allocator.Persistent);
 
 			_batchRendererGroup = new BatchRendererGroup(OnPerformCulling, IntPtr.Zero);
 			//TODO: Maybe set more reasonable bounds?
@@ -53,12 +78,14 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		public void UpdateOuterVoxels(int positionsCount, NativeArray<int> outerIndices, GraphicsBuffer graphicsBuffer) {
 			_updateOuterVoxelsHandle.Complete();
 
-			if (_sideVoxelsList.IsCreated) {
-				_sideVoxelsList.Dispose();
+			_outerVoxelsIndices = outerIndices;
+
+			if (_sideVoxelsIndices.IsCreated) {
+				_sideVoxelsIndices.Dispose();
 			}
 			
-			_sideVoxelsList = new NativeList<int>(positionsCount, Allocator.Persistent);
-			var cullInvisibleSidesJob = new CullInvisibleSidesIndicesJob(_sideIndex, _box, outerIndices, _voxels, _voxelBoxMasks, _sideVoxelsList);
+			_sideVoxelsIndices = new NativeList<int>(positionsCount, Allocator.Persistent);
+			var cullInvisibleSidesJob = new CullInvisibleSidesIndicesJob(_sideIndex, _box, outerIndices, _voxels, _voxelBoxMasks, _sideVoxelsIndices);
 			_updateOuterVoxelsHandle = cullInvisibleSidesJob.Schedule(positionsCount, default);
 			
 			_batchRendererGroup.RemoveBatch(_batchID);
@@ -74,98 +101,35 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		private JobHandle OnPerformCulling(BatchRendererGroup rendererGroup, BatchCullingContext cullingContext,
 			BatchCullingOutput cullingOutput, IntPtr userContext) {
 
-			//if (!_sideVoxelsList.IsCreated) return default;
+			_updateOuterVoxelsHandle.Complete();
+
+			var visibleSideVoxelsArray = FillDrawCommandJob.Malloc<int>((uint)_sideVoxelsIndices.Length);
+			var visibleSideVoxelsCount = new NativeArray<int>(1, Allocator.TempJob);
+
+			var camera = Camera.main;
+			var cameraPosition = camera.transform.position;
+			var cameraForward = camera.transform.forward;
 			
-			/*var calculateVisibilityBoundsJob =
+			var currentVisibilityBoundsSlice = new NativeSlice<VoxelsBounds>(_visibilityBounds, 0, _bonesCount);
+			
+			var calculateVisibilityBoundsJob =
 				new CalculateVisibilityBoundsJob(_voxelSize, _startPosition, VoxelMeshGenerator.GetSideNormal(_sideIndex), _box, cameraPosition, cameraForward,
 					_animationLength, _animationCurrentFrame, _animationNextFrame, _animationLerpRatio,
 					_bonePositionsArray, _boneAnimationPositionsArray, _boneAnimationRotationsArray,
 					currentVisibilityBoundsSlice);
-			var visibilityBoundsHandle = calculateVisibilityBoundsJob.Schedule(_bonesCount,
+			var handle = calculateVisibilityBoundsJob.Schedule(_bonesCount,
 				_bonesCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount);
 			
-			var bonesCount = visibilityBounds.Length / 6;
-			var cullBackfaceJob = new CullBackfaceJob(_visibleIndices.AsArray(), shaderVoxels,
-				new NativeSlice<VoxelsBounds>(visibilityBounds, bonesCount * _sideIndex, bonesCount),
-				_shaderVoxelsList);
-			//_cullingHandle = handle;
-			_cullingHandle = cullBackfaceJob.Schedule(_visibleIndices.Length,
-				/*_visibleIndices.Length / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, #1#handle);*/
-			
-			_updateOuterVoxelsHandle.Complete();
-			
-			var drawCommands = new BatchCullingOutputDrawCommands();
-            drawCommands.drawCommandCount = 1;
+			var cullBackfaceJob = new FillVisibleInstancesJob(_sideVoxelsIndices.AsArray(), _outerVoxelsIndices, _voxels,  currentVisibilityBoundsSlice,
+				visibleSideVoxelsArray, visibleSideVoxelsCount);
+			handle = cullBackfaceJob.Schedule(_sideVoxelsIndices.Length, handle);
 
-            // Allocate a single BatchDrawRange. ( all our draw commands will refer to this BatchDrawRange)
-            drawCommands.drawRangeCount = 1;
-            drawCommands.drawRanges = Malloc<BatchDrawRange>(1);
-            drawCommands.drawRanges[0] = new BatchDrawRange
-            {
-                drawCommandsBegin = 0,
-                drawCommandsCount = 1,
-                filterSettings = new BatchFilterSettings
-                {
-                    renderingLayerMask = 1,
-                    layer = 0,
-                    motionMode = MotionVectorGenerationMode.Camera,
-                    shadowCastingMode = _castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
-                    receiveShadows = false,
-                    staticShadowCaster = false,
-                    allDepthSorted = false
-                }
-            };
+			var fillDrawCommandJob = new FillDrawCommandJob(cullingOutput.drawCommands, _castShadows, _batchID, _batchMaterialID,
+				_batchMeshID, visibleSideVoxelsCount, visibleSideVoxelsArray);
 
-            var jobHandle = new JobHandle();
-
-            if (drawCommands.drawCommandCount > 0)
-            {
-                var visibleInstances = Malloc<int>((uint)_sideVoxelsList.Length);
-                
-                /*if (!_refreshDrawCommands)
-                {*/
-	                UnsafeUtility.MemCpy(visibleInstances, _sideVoxelsList.GetUnsafePtr(),
-		                (long)_sideVoxelsList.Length * UnsafeUtility.SizeOf<int>());
-	                drawCommands.visibleInstances = visibleInstances;
-                /*} else {
-	                _refreshDrawCommands = false;
-	                _visibleInstances = Malloc<int>((uint)visibilityArraySize, Allocator.Persistent);
-	                drawCommands.visibleInstances = visibleInstances;
-			
-	                var fillVisibleInstancesJob = new FillVisibleInstancesJob(_visibleInstances, visibleInstances, _sideVoxelsList);
-	                jobHandle = fillVisibleInstancesJob.Schedule(visibilityArraySize,
-		                visibilityArraySize / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, jobHandle);    
-                }*/
-
-                
-                // Allocate the BatchDrawCommand array (drawCommandCount entries)
-                // In SSBO mode, drawCommandCount will be just 1
-                drawCommands.drawCommands = Malloc<BatchDrawCommand>(1);
-                drawCommands.drawCommands[0] = new BatchDrawCommand {
-	                visibleOffset = (uint)0,    // all draw command is using the same {0,1,2,3...} visibility int array
-	                visibleCount = (uint)_sideVoxelsList.Length,
-	                batchID = _batchID,
-	                materialID = _batchMaterialID,
-	                meshID = _batchMeshID,
-	                submeshIndex = 0,
-	                splitVisibilityMask = 0xff,
-	                flags = BatchDrawCommandFlags.None,
-	                sortingPosition = 0
-                };
-            }
-
-            cullingOutput.drawCommands[0] = drawCommands;
-            drawCommands.instanceSortingPositions = null;
-            drawCommands.instanceSortingPositionFloatCount = 0;
+			handle = fillDrawCommandJob.Schedule(handle);
             
-            return jobHandle;
-		}
-		
-		private static T* Malloc<T>(uint count, Allocator allocator = Allocator.TempJob) where T : unmanaged {
-			return (T*)UnsafeUtility.Malloc(
-				UnsafeUtility.SizeOf<T>() * count,
-				UnsafeUtility.AlignOf<T>(),
-				allocator);
+            return handle;
 		}
 		
 		private static MetadataValue CreateMetadataValue(int nameID, int gpuOffset, bool isPerInstance) {
@@ -180,7 +144,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		public void Dispose() {
 			_updateOuterVoxelsHandle.Complete();
 			
-			_sideVoxelsList.Dispose();
+			_sideVoxelsIndices.Dispose();
+			_visibilityBounds.Dispose();
 			
 			_batchRendererGroup.RemoveBatch(_batchID);
 			_batchRendererGroup.UnregisterMaterial(_batchMaterialID);

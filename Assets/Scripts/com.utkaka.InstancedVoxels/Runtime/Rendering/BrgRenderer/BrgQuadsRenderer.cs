@@ -1,13 +1,9 @@
-using System;
-using System.Collections;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 {
@@ -113,11 +109,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 
 			_bonesCount = _bonePositionsArray.Length;
 			
-			Debug.Log("1");
-			
 			_quadRenderers = new BrgQuadRenderer[6];
 			for (var i = 0; i < 6; i++) {
-				_quadRenderers[i] = new BrgQuadRenderer(i, _voxelSize, _material, _box, _shaderVoxelsArray, _voxelBoxMasks);
+				_quadRenderers[i] = new BrgQuadRenderer(i, _voxelSize, _startPosition, _bonesCount, _animationLength,
+					_material, _box, _shaderVoxelsArray, _voxelBoxMasks, _bonePositionsArray,
+					_boneAnimationPositionsArray, _boneAnimationRotationsArray);
 			}
 			
 			UpdateOuterVoxels(handle);
