@@ -70,6 +70,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			//TODO: Maybe set more reasonable bounds?
 			var bounds = new Bounds(new Vector3(0, 0, 0), new Vector3(1048576.0f, 1048576.0f, 1048576.0f));
 			_batchRendererGroup.SetGlobalBounds(bounds);
+			_batchRendererGroup.SetEnabledViewTypes(new []{ BatchCullingViewType.Camera});
 
 			_batchMeshID = _batchRendererGroup.RegisterMesh(VoxelMeshGenerator.GetSideMesh(sideIndex, voxelSize));
 			_batchMaterialID = _batchRendererGroup.RegisterMaterial(material);
