@@ -2,9 +2,14 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShader {
     public class BrgStandardShaderRenderer : BrgRenderer{
+        private static readonly int ShaderObjectToWorldID = Shader.PropertyToID("unity_ObjectToWorld");
+        private static readonly int  ShaderWorldToObjectID = Shader.PropertyToID("unity_WorldToObject");
+        private static readonly int  ShaderColorID = Shader.PropertyToID("_BaseColor");
+        
         private const int InstanceSize = (3 + 3 + 1) * 16;
         
         private NativeArray<float4> _cpuGraphicsBuffer;
@@ -12,13 +17,13 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
         protected override Material GetDefaultMaterial() {
             return new Material(Shader.Find("Universal Render Pipeline/Simple Lit"));
         }
-
-        protected override void CreateQuadRenderers() {
-            for (var i = 0; i < 6; i++) {
-                _quadRenderers[i] = new BrgStandardShaderQuadRenderer(i, _voxelSize, _startPosition, _bonesCount, _animationLength,
-                    _material, _box, _shaderVoxelsArray, _voxelBoxMasks, _bonePositionsArray,
-                    _boneAnimationPositionsArray, _boneAnimationRotationsArray);
-            }
+        
+        protected override NativeArray<MetadataValue> CreateMetadata(int positionsCount) {
+            var batchMetadata = new NativeArray<MetadataValue>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            batchMetadata[0] = CreateMetadataValue(ShaderObjectToWorldID, 0, true);       // matrices
+            batchMetadata[1] = CreateMetadataValue(ShaderWorldToObjectID, positionsCount * 3 * 16, true); // inverse matrices
+            batchMetadata[2] = CreateMetadataValue(ShaderColorID, positionsCount * 3 * 2 * 16, true); // colors
+            return batchMetadata;
         }
 
         protected override void UpdateBuffer(int outerVoxelsCount, JobHandle handle) {

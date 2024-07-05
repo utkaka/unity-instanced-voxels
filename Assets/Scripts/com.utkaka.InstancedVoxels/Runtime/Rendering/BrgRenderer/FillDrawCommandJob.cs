@@ -11,28 +11,33 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 	    private readonly bool _castShadows;
 	    private readonly BatchID _batchID;
 	    private readonly BatchMaterialID _batchMaterialID;
-	    private readonly BatchMeshID _batchMeshID;
-	    [ReadOnly, DeallocateOnJobCompletion]
-	    private NativeArray<int> _visibleSideVoxelsCount;
+	    private readonly NativeArray<BatchMeshID> _batchMeshIDs;
 	    [ReadOnly, NativeDisableUnsafePtrRestriction]
 	    private readonly int* _visibleSideVoxelsPointer;
+	    [ReadOnly, DeallocateOnJobCompletion]
+	    private NativeArray<int> _visibleSideVoxelsCount;
+	    [ReadOnly, DeallocateOnJobCompletion]
+	    private readonly NativeArray<int> _visibleSideVoxelsOffset;
 	    [WriteOnly]
 	    private NativeArray<BatchCullingOutputDrawCommands> _output;
 
 	    public FillDrawCommandJob(NativeArray<BatchCullingOutputDrawCommands> cullingOutput, bool castShadows, BatchID batchID,
-		    BatchMaterialID batchMaterialID, BatchMeshID batchMeshID, NativeArray<int> visibleSideVoxelsCount, int* visibleSideVoxelsPointer) {
+		    BatchMaterialID batchMaterialID, NativeArray<BatchMeshID> batchMeshIDs,
+		    int* visibleSideVoxelsPointer, NativeArray<int> visibleSideVoxelsOffset,
+		    NativeArray<int> visibleSideVoxelsCount) {
 		    _output = cullingOutput;
 		    _castShadows = castShadows;
 		    _batchID = batchID;
 		    _batchMaterialID = batchMaterialID;
-		    _batchMeshID = batchMeshID;
-		    _visibleSideVoxelsCount = visibleSideVoxelsCount;
+		    _batchMeshIDs = batchMeshIDs;
 		    _visibleSideVoxelsPointer = visibleSideVoxelsPointer;
+		    _visibleSideVoxelsCount = visibleSideVoxelsCount;
+		    _visibleSideVoxelsOffset = visibleSideVoxelsOffset;
 	    }
 
 	    public void Execute() {
             var drawCommands = new BatchCullingOutputDrawCommands {
-	            drawCommandCount = 1,
+	            drawCommandCount = 6,
 	            instanceSortingPositions = null,
 	            instanceSortingPositionFloatCount = 0,
 	            drawRangeCount = 1,
@@ -41,7 +46,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 
             drawCommands.drawRanges[0] = new BatchDrawRange {
                 drawCommandsBegin = 0,
-                drawCommandsCount = 1,
+                drawCommandsCount = 6,
                 filterSettings = new BatchFilterSettings
                 {
                     renderingLayerMask = 1,
@@ -56,18 +61,20 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 
             drawCommands.visibleInstances = _visibleSideVoxelsPointer;
 	                
-            drawCommands.drawCommands = Malloc<BatchDrawCommand>(1);
-            drawCommands.drawCommands[0] = new BatchDrawCommand {
-	            visibleOffset = 0,
-	            visibleCount = (uint)_visibleSideVoxelsCount[0],
-	            batchID = _batchID,
-	            materialID = _batchMaterialID,
-	            meshID = _batchMeshID,
-	            submeshIndex = 0,
-	            splitVisibilityMask = 0xff,
-	            flags = BatchDrawCommandFlags.None,
-	            sortingPosition = 0
-            };
+            drawCommands.drawCommands = Malloc<BatchDrawCommand>(6);
+            for (var i = 0; i < 6; i++) {
+	            drawCommands.drawCommands[i] = new BatchDrawCommand {
+		            visibleOffset = (uint)_visibleSideVoxelsOffset[i],
+		            visibleCount = (uint)_visibleSideVoxelsCount[i],
+		            batchID = _batchID,
+		            materialID = _batchMaterialID,
+		            meshID = _batchMeshIDs[i],
+		            submeshIndex = 0,
+		            splitVisibilityMask = 0xff,
+		            flags = BatchDrawCommandFlags.None,
+		            sortingPosition = 0
+	            };   
+            }
 
             _output[0] = drawCommands;
 	    }

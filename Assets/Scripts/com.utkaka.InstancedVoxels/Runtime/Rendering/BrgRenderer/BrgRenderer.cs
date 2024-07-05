@@ -1,17 +1,20 @@
+using System;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 {
-    public abstract class BrgRenderer : MonoBehaviour, IVoxelRenderer {
+    public unsafe abstract class BrgRenderer : MonoBehaviour, IVoxelRenderer {
 		[SerializeField]
 		protected Voxels _voxels;
 		[SerializeField]
 		protected Material _material;
+		private readonly bool _castShadows;
 		
 		protected Bounds _bounds;
 
@@ -39,7 +42,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		protected NativeArray<float3> _boneAnimationPositionsArray;
 		protected NativeArray<float4> _boneAnimationRotationsArray;
 		
+		private BatchRendererGroup _batchRendererGroup;
 		protected GraphicsBuffer _graphicsBuffer;
+		private BatchID _batchID;
+		private BatchMaterialID _batchMaterialID;
+		private NativeArray<BatchMeshID> _batchMeshIDs;
 
 		public void Init(Voxels voxels, CullingOptions cullingOptions) {
 			_voxels = voxels;
@@ -102,7 +109,24 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_bonesCount = _bonePositionsArray.Length;
 			
 			_quadRenderers = new BrgQuadRenderer[6];
-			CreateQuadRenderers();
+			
+			_batchRendererGroup = new BatchRendererGroup(OnPerformCulling, IntPtr.Zero);
+			//TODO: Maybe set more reasonable bounds?
+			var bounds = new Bounds(new Vector3(0, 0, 0), new Vector3(1048576.0f, 1048576.0f, 1048576.0f));
+			_batchRendererGroup.SetGlobalBounds(bounds);
+			_batchRendererGroup.SetEnabledViewTypes(new []{ BatchCullingViewType.Camera});
+			_batchMaterialID = _batchRendererGroup.RegisterMaterial(_material);
+
+			_batchMeshIDs = new NativeArray<BatchMeshID>(6, Allocator.Persistent);
+			for (var i = 0; i < 6; i++) {
+				_batchMeshIDs[i] = _batchRendererGroup.RegisterMesh(VoxelMeshGenerator.GetSideMesh(i, _voxelSize));
+			}
+			
+			for (var i = 0; i < 6; i++) {
+				_quadRenderers[i] = new BrgQuadRenderer(i, _voxelSize, _startPosition, _bonesCount, _animationLength,
+					_material, _box, _shaderVoxelsArray, _voxelBoxMasks, _bonePositionsArray,
+					_boneAnimationPositionsArray, _boneAnimationRotationsArray);
+			}
 			
 			UpdateOuterVoxels(handle);
 			
@@ -115,8 +139,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			
 			_voxels = null;
 		}
-
-		protected abstract void CreateQuadRenderers();
 
 		private void UpdateOuterVoxels(JobHandle handle) {
 			if (_outerVoxels.IsCreated) _outerVoxels.Dispose();
@@ -133,11 +155,64 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].UpdateOuterVoxels(outerVoxelsCount, _outerVoxels, _graphicsBuffer);
 			}
+			
+			_batchRendererGroup.RemoveBatch(_batchID);
+			var batchMetadata = CreateMetadata(outerVoxelsCount);
+			_batchID = _batchRendererGroup.AddBatch(batchMetadata, _graphicsBuffer.bufferHandle,
+				0, 0);
+			batchMetadata.Dispose();
 		}
+		
+		protected abstract NativeArray<MetadataValue> CreateMetadata(int positionsCount);
 
 		protected abstract void UpdateBuffer(int outerVoxelsCount, JobHandle handle);
 
+		private JobHandle OnPerformCulling(BatchRendererGroup rendererGroup, BatchCullingContext cullingContext,
+			BatchCullingOutput cullingOutput, IntPtr userContext) {
+			var offset = 0;
+			var visibleSideVoxelsCount = new NativeArray<int>(6, Allocator.TempJob);
+			var visibleSideVoxelsOffset = new NativeArray<int>(6, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+			for (var i = 0; i < 6; i++) {
+				visibleSideVoxelsOffset[i] = offset;
+				offset += _quadRenderers[i].SideVoxelsIndicesLength;
+			}
+			var visibleSideVoxelsArray = FillDrawCommandJob.Malloc<int>((uint)offset);
+			
+			var cameraTransform = Camera.main.transform;
+			var cameraPosition = cameraTransform.position;
+			var cameraForward = cameraTransform.forward;
+			
+			
+			var handle = default(JobHandle);
+			for (var i = 0; i < 6; i++) {
+				handle = JobHandle.CombineDependencies(handle, _quadRenderers[i].OnPerformCulling(cameraPosition, cameraForward, visibleSideVoxelsArray, visibleSideVoxelsOffset[i], visibleSideVoxelsCount));
+			}
+			
+			var fillDrawCommandJob = new FillDrawCommandJob(cullingOutput.drawCommands, _castShadows, _batchID, _batchMaterialID,
+				_batchMeshIDs, visibleSideVoxelsArray, visibleSideVoxelsOffset, visibleSideVoxelsCount);
+
+			handle = fillDrawCommandJob.Schedule(handle);
+			return handle;
+		}
+
+		protected static MetadataValue CreateMetadataValue(int nameID, int gpuOffset, bool isPerInstance) {
+			const uint kIsPerInstanceBit = 0x80000000;
+			return new MetadataValue
+			{
+				NameID = nameID,
+				Value = (uint)gpuOffset | (isPerInstance ? (kIsPerInstanceBit) : 0),
+			};
+		}
+
 		protected virtual void OnDestroy() {
+			
+			_batchRendererGroup.RemoveBatch(_batchID);
+			_batchRendererGroup.UnregisterMaterial(_batchMaterialID);
+			for (var i = 0; i < 6; i++) {
+				_batchRendererGroup.UnregisterMesh(_batchMeshIDs[i]);
+			}
+			_batchRendererGroup.Dispose();
+			
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].Dispose();
 			}
@@ -153,6 +228,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_voxelBoxMasks.Dispose();
 			
 			_graphicsBuffer.Dispose();
+
+			_batchMeshIDs.Dispose();
+			
+			
 		}
     }
 }
