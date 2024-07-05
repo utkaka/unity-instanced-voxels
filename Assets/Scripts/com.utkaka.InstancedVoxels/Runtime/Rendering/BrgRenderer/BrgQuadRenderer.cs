@@ -2,7 +2,6 @@ using System;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -10,11 +9,7 @@ using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 {
-    public unsafe class BrgQuadRenderer {
-	    private static readonly int ShaderObjectToWorldID = Shader.PropertyToID("unity_ObjectToWorld");
-	    private static readonly int  ShaderWorldToObjectID = Shader.PropertyToID("unity_WorldToObject");
-	    private static readonly int  ShaderColorID = Shader.PropertyToID("_BaseColor");
-        
+    public abstract unsafe class BrgQuadRenderer {
 		private readonly int _sideIndex;
 		private readonly float _voxelSize;
 		private readonly Vector3 _startPosition;
@@ -90,14 +85,13 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_updateOuterVoxelsHandle = cullInvisibleSidesJob.Schedule(positionsCount, default);
 			
 			_batchRendererGroup.RemoveBatch(_batchID);
-			var batchMetadata = new NativeArray<MetadataValue>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-			batchMetadata[0] = CreateMetadataValue(ShaderObjectToWorldID, 0, true);       // matrices
-			batchMetadata[1] = CreateMetadataValue(ShaderWorldToObjectID, positionsCount * 3 * 16, true); // inverse matrices
-			batchMetadata[2] = CreateMetadataValue(ShaderColorID, positionsCount * 3 * 2 * 16, true); // colors
+			var batchMetadata = CreateMetadata(positionsCount);
 			_batchID = _batchRendererGroup.AddBatch(batchMetadata, graphicsBuffer.bufferHandle,
 				0, 0);
 			batchMetadata.Dispose();
 		}
+
+		protected abstract NativeArray<MetadataValue> CreateMetadata(int positionsCount);
 		
 		private JobHandle OnPerformCulling(BatchRendererGroup rendererGroup, BatchCullingContext cullingContext,
 			BatchCullingOutput cullingOutput, IntPtr userContext) {
@@ -133,7 +127,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
             return handle;
 		}
 		
-		private static MetadataValue CreateMetadataValue(int nameID, int gpuOffset, bool isPerInstance) {
+		protected static MetadataValue CreateMetadataValue(int nameID, int gpuOffset, bool isPerInstance) {
 			const uint kIsPerInstanceBit = 0x80000000;
 			return new MetadataValue
 			{

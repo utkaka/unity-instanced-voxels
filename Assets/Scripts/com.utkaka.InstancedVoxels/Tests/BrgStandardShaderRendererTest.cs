@@ -1,13 +1,12 @@
 using System.Collections;
 using com.utkaka.InstancedVoxels.Runtime.Rendering;
-using com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer;
+using com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShader;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEngine.TestTools;
 
-namespace com.utkaka.InstancedVoxels.Tests
-{
-    public class BrgQuadsRendererTest: VoxelRendererPerformanceTest<BrgQuadsRenderer> {
+namespace com.utkaka.InstancedVoxels.Tests {
+    public class BrgStandardShaderRendererTest : VoxelRendererPerformanceTest<BrgStandardShaderRenderer> {
         private static IEnumerable TestCases() {
             yield return new RendererTestCase("Cube_008", CullingOptions.InnerSides);
             yield return new RendererTestCase("Cube_004", CullingOptions.InnerSides);

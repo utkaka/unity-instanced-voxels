@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
+namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShader
 {
     [BurstCompile]
     public struct UpdatePositionsJob : IJobParallelFor {

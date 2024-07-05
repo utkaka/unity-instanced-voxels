@@ -7,54 +7,44 @@ using UnityEngine;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 {
-    public class BrgQuadsRenderer : MonoBehaviour, IVoxelRenderer {
-	    private const int InstanceSize = (3 + 3 + 1) * 16;
-	    
+    public abstract class BrgRenderer : MonoBehaviour, IVoxelRenderer {
 		[SerializeField]
-		private Voxels _voxels;
+		protected Voxels _voxels;
 		[SerializeField]
-		private Material _material;
+		protected Material _material;
 		
-		private Bounds _bounds;
+		protected Bounds _bounds;
 
-		private float _voxelSize;
-		private Vector3 _startPosition;
+		protected float _voxelSize;
+		protected Vector3 _startPosition;
+		protected VoxelsBox _box;
+		protected int _positionsCount;
+		protected int _bonesCount;
 		
-		private VoxelsBox _box;
-		private int _positionsCount;
-		private int _bonesCount;
+		protected float _animationFrameRate;
+		protected float _animationTime;
+		protected int _animationLength;
 		
-		private float _animationFrameRate;
-		private float _animationTime;
-		private int _animationLength;
+		protected int _animationCurrentFrame;
+		protected int _animationNextFrame;
+		protected float _animationLerpRatio;
 		
-		private int _animationCurrentFrame;
-		private int _animationNextFrame;
-		private float _animationLerpRatio;
-
-		private BrgQuadRenderer[] _quadRenderers;
+		protected BrgQuadRenderer[] _quadRenderers;
 		
-		private NativeArray<float3> _bonePositionsArray;
-		private NativeArray<float3> _boneAnimationPositionsArray;
-		private NativeArray<float4> _boneAnimationRotationsArray;
+		protected NativeArray<ShaderVoxel> _shaderVoxelsArray;
+		protected NativeArray<byte> _voxelBoxMasks;
+		protected NativeList<int> _outerVoxels;
 		
-		private ComputeBuffer _bonePositionsBuffer;
-		private ComputeBuffer _bonePositionsAnimationBuffer;
-		private ComputeBuffer _boneRotationsAnimationBuffer;
+		protected NativeArray<float3> _bonePositionsArray;
+		protected NativeArray<float3> _boneAnimationPositionsArray;
+		protected NativeArray<float4> _boneAnimationRotationsArray;
 		
-		private NativeArray<ShaderVoxel> _shaderVoxelsArray;
-		
-		private NativeArray<byte> _voxelBoxMasks;
-		private NativeList<int> _outerVoxels;
-		
-		private GraphicsBuffer _graphicsBuffer;
-		private NativeArray<float4> _cpuGraphicsBuffer;
-
+		protected GraphicsBuffer _graphicsBuffer;
 
 		public void Init(Voxels voxels, CullingOptions cullingOptions) {
 			_voxels = voxels;
 			if (_material == null) {
-				_material = new Material(Shader.Find("Universal Render Pipeline/Simple Lit"));
+				_material = GetDefaultMaterial();
 			}
 		}
 		
@@ -62,7 +52,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			InitVoxels();
 		}
 
-		private void InitVoxels() {
+		protected abstract Material GetDefaultMaterial();
+
+		protected virtual void InitVoxels() {
 			_voxelSize = _voxels.VoxelSize;
 			_startPosition = _voxels.StartPosition;
 			_bounds = new Bounds(Vector3.zero, 
@@ -110,11 +102,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_bonesCount = _bonePositionsArray.Length;
 			
 			_quadRenderers = new BrgQuadRenderer[6];
-			for (var i = 0; i < 6; i++) {
-				_quadRenderers[i] = new BrgQuadRenderer(i, _voxelSize, _startPosition, _bonesCount, _animationLength,
-					_material, _box, _shaderVoxelsArray, _voxelBoxMasks, _bonePositionsArray,
-					_boneAnimationPositionsArray, _boneAnimationRotationsArray);
-			}
+			CreateQuadRenderers();
 			
 			UpdateOuterVoxels(handle);
 			
@@ -128,6 +116,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_voxels = null;
 		}
 
+		protected abstract void CreateQuadRenderers();
+
 		private void UpdateOuterVoxels(JobHandle handle) {
 			if (_outerVoxels.IsCreated) _outerVoxels.Dispose();
 			
@@ -137,36 +127,22 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			handle.Complete();
 			
 			var outerVoxelsCount = _outerVoxels.Length;
-
-			if (_cpuGraphicsBuffer.IsCreated) {
-				_cpuGraphicsBuffer.Dispose();
-				_graphicsBuffer.Dispose();
-			}
 			
-			_cpuGraphicsBuffer = new NativeArray<float4>(outerVoxelsCount * InstanceSize / 16, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-
-			var updatePositionsJob = new UpdatePositionsJob(_startPosition, _voxelSize, outerVoxelsCount, _outerVoxels, _shaderVoxelsArray, _cpuGraphicsBuffer);
-			updatePositionsJob.Schedule(outerVoxelsCount,
-				outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle).Complete();
-			
-			_graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, outerVoxelsCount * InstanceSize / 4, 4);
-			_graphicsBuffer.SetData(_cpuGraphicsBuffer, 0, 0, _cpuGraphicsBuffer.Length);
+			UpdateBuffer(outerVoxelsCount, handle);
 			
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].UpdateOuterVoxels(outerVoxelsCount, _outerVoxels, _graphicsBuffer);
 			}
 		}
 
-		private void OnDestroy() {
+		protected abstract void UpdateBuffer(int outerVoxelsCount, JobHandle handle);
+
+		protected virtual void OnDestroy() {
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].Dispose();
 			}
 
 			if (_outerVoxels.IsCreated) _outerVoxels.Dispose();
-			
-			_bonePositionsBuffer?.Dispose();
-			_bonePositionsAnimationBuffer?.Dispose();
-			_boneRotationsAnimationBuffer?.Dispose();
 			
 			_bonePositionsArray.Dispose();
 			_boneAnimationPositionsArray.Dispose();
@@ -177,7 +153,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_voxelBoxMasks.Dispose();
 			
 			_graphicsBuffer.Dispose();
-			_cpuGraphicsBuffer.Dispose();
 		}
     }
 }
