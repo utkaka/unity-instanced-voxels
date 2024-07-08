@@ -14,7 +14,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 	    private readonly NativeArray<BatchMeshID> _batchMeshIDs;
 	    [ReadOnly, NativeDisableUnsafePtrRestriction]
 	    private readonly int* _visibleSideVoxelsPointer;
-	    [ReadOnly, DeallocateOnJobCompletion]
+	    [ReadOnly]
 	    private NativeArray<int> _visibleSideVoxelsCount;
 	    [ReadOnly, DeallocateOnJobCompletion]
 	    private readonly NativeArray<int> _visibleSideVoxelsOffset;

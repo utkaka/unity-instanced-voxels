@@ -47,6 +47,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		private BatchID _batchID;
 		private BatchMaterialID _batchMaterialID;
 		private NativeArray<BatchMeshID> _batchMeshIDs;
+		private NativeArray<int> _visibleSideVoxelsCount;
 
 		public void Init(Voxels voxels, CullingOptions cullingOptions) {
 			_voxels = voxels;
@@ -110,6 +111,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			
 			_quadRenderers = new BrgQuadRenderer[6];
 			
+			_visibleSideVoxelsCount = new NativeArray<int>(6, Allocator.Persistent);
+			
 			_batchRendererGroup = new BatchRendererGroup(OnPerformCulling, IntPtr.Zero);
 			//TODO: Maybe set more reasonable bounds?
 			var bounds = new Bounds(new Vector3(0, 0, 0), new Vector3(1048576.0f, 1048576.0f, 1048576.0f));
@@ -170,7 +173,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		private JobHandle OnPerformCulling(BatchRendererGroup rendererGroup, BatchCullingContext cullingContext,
 			BatchCullingOutput cullingOutput, IntPtr userContext) {
 			var offset = 0;
-			var visibleSideVoxelsCount = new NativeArray<int>(6, Allocator.TempJob);
+			
 			var visibleSideVoxelsOffset = new NativeArray<int>(6, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 			for (var i = 0; i < 6; i++) {
 				visibleSideVoxelsOffset[i] = offset;
@@ -185,11 +188,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			
 			var handle = default(JobHandle);
 			for (var i = 0; i < 6; i++) {
-				handle = JobHandle.CombineDependencies(handle, _quadRenderers[i].OnPerformCulling(cameraPosition, cameraForward, visibleSideVoxelsArray, visibleSideVoxelsOffset[i], visibleSideVoxelsCount));
+				handle = JobHandle.CombineDependencies(handle, _quadRenderers[i].OnPerformCulling(cameraPosition, cameraForward, visibleSideVoxelsArray, visibleSideVoxelsOffset[i], _visibleSideVoxelsCount));
 			}
 			
 			var fillDrawCommandJob = new FillDrawCommandJob(cullingOutput.drawCommands, _castShadows, _batchID, _batchMaterialID,
-				_batchMeshIDs, visibleSideVoxelsArray, visibleSideVoxelsOffset, visibleSideVoxelsCount);
+				_batchMeshIDs, visibleSideVoxelsArray, visibleSideVoxelsOffset, _visibleSideVoxelsCount);
 
 			handle = fillDrawCommandJob.Schedule(handle);
 			return handle;
@@ -216,6 +219,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].Dispose();
 			}
+
+			_visibleSideVoxelsCount.Dispose();
 
 			if (_outerVoxels.IsCreated) _outerVoxels.Dispose();
 			

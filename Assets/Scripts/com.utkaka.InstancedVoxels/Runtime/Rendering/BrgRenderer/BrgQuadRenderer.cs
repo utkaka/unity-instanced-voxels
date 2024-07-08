@@ -2,6 +2,7 @@ using System;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -21,6 +22,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		private readonly VoxelsBox _box;
 		private readonly NativeArray<ShaderVoxel> _voxels;
 		private readonly NativeArray<byte> _voxelBoxMasks;
+		private NativeArray<VoxelsBounds> _previousVisibilityBounds;
+		private NativeArray<int> _previousVisibileIndices;
 		private NativeArray<VoxelsBounds> _visibilityBounds;
 		
 		private readonly NativeArray<float3> _bonePositionsArray;
@@ -28,7 +31,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		private readonly NativeArray<float4> _boneAnimationRotationsArray;
 
 		private JobHandle _updateOuterVoxelsHandle;
-		private JobHandle _cullHandle;
 
 		private NativeArray<int> _outerVoxelsIndices;
 		private NativeList<int> _sideVoxelsIndices;
@@ -60,6 +62,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_animationLerpRatio = 0.0f;
 
 			_visibilityBounds = new NativeArray<VoxelsBounds>(_bonesCount, Allocator.Persistent);
+			_previousVisibilityBounds = new NativeArray<VoxelsBounds>(_bonesCount, Allocator.Persistent);
 		}
 
 		public void UpdateOuterVoxels(int positionsCount, NativeArray<int> outerIndices, GraphicsBuffer graphicsBuffer) {
@@ -69,6 +72,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 
 			if (_sideVoxelsIndices.IsCreated) {
 				_sideVoxelsIndices.Dispose();
+			}
+
+			if (_previousVisibileIndices.IsCreated) {
+				_previousVisibileIndices.Dispose();
 			}
 			
 			_sideVoxelsIndices = new NativeList<int>(positionsCount, Allocator.Persistent);
@@ -80,27 +87,44 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			int* visibleSideVoxelsArray, int offset, NativeArray<int> visibleSideVoxelsCount) {
 			if (!_sideVoxelsIndices.IsCreated) return default;
 			_updateOuterVoxelsHandle.Complete();
-			
+			NativeArray<VoxelsBounds>.Copy(_visibilityBounds, _previousVisibilityBounds);
+			var previousVisibilityBoundsSlice = new NativeSlice<VoxelsBounds>(_previousVisibilityBounds, 0, _bonesCount);
 			var currentVisibilityBoundsSlice = new NativeSlice<VoxelsBounds>(_visibilityBounds, 0, _bonesCount);
 			var calculateVisibilityBoundsJob =
 				new CalculateVisibilityBoundsJob(_voxelSize, _startPosition, VoxelMeshGenerator.GetSideNormal(_sideIndex), _box, cameraPosition, cameraForward,
 					_animationLength, _animationCurrentFrame, _animationNextFrame, _animationLerpRatio,
 					_bonePositionsArray, _boneAnimationPositionsArray, _boneAnimationRotationsArray,
 					currentVisibilityBoundsSlice);
-			_cullHandle = calculateVisibilityBoundsJob.Schedule(_bonesCount,
-				_bonesCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount);
 			
-			var cullBackfaceJob = new FillVisibleInstancesJob(_sideIndex, _sideVoxelsIndices.AsArray(), _outerVoxelsIndices, _voxels,  currentVisibilityBoundsSlice,
-				visibleSideVoxelsArray, offset, visibleSideVoxelsCount);
-			_cullHandle = cullBackfaceJob.Schedule(_sideVoxelsIndices.Length, _cullHandle);
+			var visibilityBoundsHandle = calculateVisibilityBoundsJob.Schedule(_bonesCount,
+				_bonesCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount);
+			//TODO: if there is no _previousVisibileIndices we can skip CheckVisibilityBoundsChangedJob
+			var boundsChanged = new NativeArray<bool>(1, Allocator.TempJob);
+			var checkVisibilityBoundsChangedJob = new CheckVisibilityBoundsChangedJob(previousVisibilityBoundsSlice,
+				currentVisibilityBoundsSlice, boundsChanged);
+			visibilityBoundsHandle = checkVisibilityBoundsChangedJob.Schedule(_bonesCount, visibilityBoundsHandle);
+			visibilityBoundsHandle.Complete();
 
-            return _cullHandle;
+			var handle = default(JobHandle);
+			if (boundsChanged[0] || !_previousVisibileIndices.IsCreated) {
+				visibleSideVoxelsCount[_sideIndex] = 0;
+				_previousVisibileIndices = new NativeArray<int>(SideVoxelsIndicesLength, Allocator.Persistent);
+				var cullBackfaceJob = new FillVisibleInstancesJob(_sideIndex, _sideVoxelsIndices.AsArray(), _outerVoxelsIndices, _voxels,  currentVisibilityBoundsSlice,
+					visibleSideVoxelsArray + offset, 0, visibleSideVoxelsCount, _previousVisibileIndices);
+				handle = cullBackfaceJob.Schedule(_sideVoxelsIndices.Length, handle);
+			} else {
+				var pointerWithOffset = visibleSideVoxelsArray + offset;
+				UnsafeUtility.MemCpy(pointerWithOffset, _previousVisibileIndices.GetUnsafePtr(),
+					(long)visibleSideVoxelsCount[_sideIndex] * UnsafeUtility.SizeOf<int>());
+			}
+			boundsChanged.Dispose();
+            return handle;
 		}
 		
 		public void Dispose() {
 			_updateOuterVoxelsHandle.Complete();
-			_cullHandle.Complete();
-			
+			_previousVisibilityBounds.Dispose();
+			_previousVisibileIndices.Dispose();
 			_sideVoxelsIndices.Dispose();
 			_visibilityBounds.Dispose();
 		}

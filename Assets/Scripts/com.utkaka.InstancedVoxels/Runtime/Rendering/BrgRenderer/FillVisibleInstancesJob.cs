@@ -4,7 +4,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 {
@@ -23,13 +22,15 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
         private readonly int* _outputVoxelIndices;
         [NativeDisableContainerSafetyRestriction]
         private NativeArray<int> _visibleSideVoxelsCount;
+        [WriteOnly]
+        private NativeArray<int> _previousVisibleIndices;
 
         private readonly int _offset;
 
         public FillVisibleInstancesJob(int sideIndex, NativeArray<int> sideVoxelsIndices, NativeArray<int> outerVoxelsIndices,
             NativeArray<ShaderVoxel> inputVoxels,
             NativeSlice<VoxelsBounds> visibilityBounds, int* outputVoxelIndices, int offset,
-            NativeArray<int> visibleSideVoxelsCount) {
+            NativeArray<int> visibleSideVoxelsCount, NativeArray<int> previousVisibleIndices) {
             _sideIndex = sideIndex;
             _sideVoxelsIndices = sideVoxelsIndices;
             _outerVoxelsIndices = outerVoxelsIndices;
@@ -38,15 +39,20 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
             _outputVoxelIndices = outputVoxelIndices;
             _offset = offset;
             _visibleSideVoxelsCount = visibleSideVoxelsCount;
+            _previousVisibleIndices = previousVisibleIndices;
         }
 
         public void Execute(int index) {
-            var inputVoxel = _inputVoxels[_outerVoxelsIndices[_sideVoxelsIndices[index]]];
+            var sideVoxelIndex = _sideVoxelsIndices[index];
+            var inputVoxel = _inputVoxels[_outerVoxelsIndices[sideVoxelIndex]];
             var voxelIndices = inputVoxel.GetPosition();
             var bone = inputVoxel.GetBone();
             if (!_visibilityBounds[bone].Contains(new int3(voxelIndices.x, voxelIndices.y, voxelIndices.z))) return;
-            _outputVoxelIndices[_offset + _visibleSideVoxelsCount[_sideIndex]] = _sideVoxelsIndices[index];
-            _visibleSideVoxelsCount[_sideIndex]++;
+            var visibleCount = _visibleSideVoxelsCount[_sideIndex];
+            _previousVisibleIndices[visibleCount] = sideVoxelIndex;
+            _outputVoxelIndices[_offset + visibleCount] = sideVoxelIndex;
+            visibleCount++;
+            _visibleSideVoxelsCount[_sideIndex] = visibleCount;
         }
     }
 }
