@@ -1,3 +1,4 @@
+using com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -5,25 +6,19 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShader {
-    public class BrgStandardShaderRenderer : BrgRenderer{
-        private static readonly int ShaderObjectToWorldID = Shader.PropertyToID("unity_ObjectToWorld");
-        private static readonly int  ShaderWorldToObjectID = Shader.PropertyToID("unity_WorldToObject");
-        private static readonly int  ShaderColorID = Shader.PropertyToID("_BaseColor");
-        
+    public class BrgStandardShaderRenderer : BrgRenderer {
         private const int InstanceSize = (3 + 3 + 1) * 16;
+        
+        private BatchMetadata _batchMetadata = new(new PerInstanceMetadataValue<float4x3>("unity_ObjectToWorld"),
+            new PerInstanceMetadataValue<float4x3>("unity_WorldToObject"),
+            new PerInstanceMetadataValue<float4>("_BaseColor"));
+
+        protected override BatchMetadata BatchMetadata => _batchMetadata;
         
         private NativeArray<float4> _cpuGraphicsBuffer;
         
         protected override Material GetDefaultMaterial() {
             return new Material(Shader.Find("Universal Render Pipeline/Simple Lit"));
-        }
-        
-        protected override NativeArray<MetadataValue> CreateMetadata(int positionsCount) {
-            var batchMetadata = new NativeArray<MetadataValue>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            batchMetadata[0] = CreateMetadataValue(ShaderObjectToWorldID, 0, true);       // matrices
-            batchMetadata[1] = CreateMetadataValue(ShaderWorldToObjectID, positionsCount * 3 * 16, true); // inverse matrices
-            batchMetadata[2] = CreateMetadataValue(ShaderColorID, positionsCount * 3 * 2 * 16, true); // colors
-            return batchMetadata;
         }
 
         protected override void UpdateBuffer(int outerVoxelsCount, JobHandle handle) {

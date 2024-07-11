@@ -1,4 +1,5 @@
 using System;
+using com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
@@ -41,10 +42,12 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		protected NativeArray<float3> _bonePositionsArray;
 		protected NativeArray<float3> _boneAnimationPositionsArray;
 		protected NativeArray<float4> _boneAnimationRotationsArray;
-		
+
+		protected abstract BatchMetadata BatchMetadata { get; }
+
 		private BatchRendererGroup _batchRendererGroup;
 		protected GraphicsBuffer _graphicsBuffer;
-		private BatchID _batchID;
+		private NativeArray<BatchID> _batchIDs;
 		private BatchMaterialID _batchMaterialID;
 		private NativeArray<BatchMeshID> _batchMeshIDs;
 		private NativeArray<int> _visibleSideVoxelsCount;
@@ -158,15 +161,28 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].UpdateOuterVoxels(outerVoxelsCount, _outerVoxels, _graphicsBuffer);
 			}
-			
-			_batchRendererGroup.RemoveBatch(_batchID);
-			var batchMetadata = CreateMetadata(outerVoxelsCount);
-			_batchID = _batchRendererGroup.AddBatch(batchMetadata, _graphicsBuffer.bufferHandle,
-				0, 0);
-			batchMetadata.Dispose();
+
+			CreateBatches((uint)outerVoxelsCount);
 		}
-		
-		protected abstract NativeArray<MetadataValue> CreateMetadata(int positionsCount);
+
+		private void CreateBatches(uint positionsCount) {
+
+			DisposeBatches();
+			//BatchRendererGroup.BufferTarget == BatchBufferTarget.ConstantBuffer
+
+			var batchesCount = 1;
+			_batchIDs = new NativeArray<BatchID>(batchesCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+			var metadataValues = new NativeArray<MetadataValue>(BatchMetadata.MetadataLength, Allocator.Temp,
+				NativeArrayOptions.UninitializedMemory);
+			uint bufferOffset = 0;
+			for (var i = 0; i < batchesCount; i++) {
+				var batchOffset = BatchMetadata.FillMetadataValues(metadataValues, positionsCount);
+				_batchIDs[i] = _batchRendererGroup.AddBatch(metadataValues, _graphicsBuffer.bufferHandle,
+					bufferOffset, 0);
+				bufferOffset += batchOffset;
+			}
+			metadataValues.Dispose();
+		}
 
 		protected abstract void UpdateBuffer(int outerVoxelsCount, JobHandle handle);
 
@@ -191,25 +207,15 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 				handle = JobHandle.CombineDependencies(handle, _quadRenderers[i].OnPerformCulling(cameraPosition, cameraForward, visibleSideVoxelsArray, visibleSideVoxelsOffset[i], _visibleSideVoxelsCount));
 			}
 			
-			var fillDrawCommandJob = new FillDrawCommandJob(cullingOutput.drawCommands, _castShadows, _batchID, _batchMaterialID,
+			var fillDrawCommandJob = new FillDrawCommandJob(cullingOutput.drawCommands, _castShadows, _batchIDs[0], _batchMaterialID,
 				_batchMeshIDs, visibleSideVoxelsArray, visibleSideVoxelsOffset, _visibleSideVoxelsCount);
 
 			handle = fillDrawCommandJob.Schedule(handle);
 			return handle;
 		}
 
-		protected static MetadataValue CreateMetadataValue(int nameID, int gpuOffset, bool isPerInstance) {
-			const uint kIsPerInstanceBit = 0x80000000;
-			return new MetadataValue
-			{
-				NameID = nameID,
-				Value = (uint)gpuOffset | (isPerInstance ? (kIsPerInstanceBit) : 0),
-			};
-		}
-
 		protected virtual void OnDestroy() {
-			
-			_batchRendererGroup.RemoveBatch(_batchID);
+			DisposeBatches();
 			_batchRendererGroup.UnregisterMaterial(_batchMaterialID);
 			for (var i = 0; i < 6; i++) {
 				_batchRendererGroup.UnregisterMesh(_batchMeshIDs[i]);
@@ -235,8 +241,15 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_graphicsBuffer.Dispose();
 
 			_batchMeshIDs.Dispose();
-			
-			
+		}
+		
+		private void DisposeBatches() {
+			if (_batchIDs.IsCreated) {
+				for (var i = 0; i < _batchIDs.Length; i++) {
+					_batchRendererGroup.RemoveBatch(_batchIDs[i]);
+				}
+				_batchIDs.Dispose();
+			}
 		}
     }
 }
