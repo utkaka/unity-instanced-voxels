@@ -12,15 +12,15 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata {
             _metaDataValues = metaDataValues;
         }
 
-        public uint FillMetadataValues(NativeArray<MetadataValue> metadataValues, uint instanceCount) {
-            uint offset = 0;
+        public int FillMetadataValues(NativeArray<MetadataValue> metadataValues, int instanceCount) {
+            var offset = 0;
             for (var i = 0; i < MetadataLength; i++) {
                 metadataValues[i] = _metaDataValues[i].GetMetadataValue(ref offset, instanceCount);
             }
             return offset;
         }
 
-        public long GetBufferSizeInFloat(uint instanceCount) {
+        public int GetBufferSizeInFloat(int instanceCount) {
             return _metaDataValues.Sum(metadataValue => metadataValue.GetBufferSizeInFloat(instanceCount));
         }
     }

@@ -162,10 +162,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 				_quadRenderers[i].UpdateOuterVoxels(outerVoxelsCount, _outerVoxels, _graphicsBuffer);
 			}
 
-			CreateBatches((uint)outerVoxelsCount);
+			CreateBatches(outerVoxelsCount);
 		}
 
-		private void CreateBatches(uint positionsCount) {
+		private void CreateBatches(int positionsCount) {
 
 			DisposeBatches();
 			//BatchRendererGroup.BufferTarget == BatchBufferTarget.ConstantBuffer
@@ -174,11 +174,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_batchIDs = new NativeArray<BatchID>(batchesCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 			var metadataValues = new NativeArray<MetadataValue>(BatchMetadata.MetadataLength, Allocator.Temp,
 				NativeArrayOptions.UninitializedMemory);
-			uint bufferOffset = 0;
+			int bufferOffset = 0;
 			for (var i = 0; i < batchesCount; i++) {
 				var batchOffset = BatchMetadata.FillMetadataValues(metadataValues, positionsCount);
 				_batchIDs[i] = _batchRendererGroup.AddBatch(metadataValues, _graphicsBuffer.bufferHandle,
-					bufferOffset, 0);
+					(uint)bufferOffset, 0);
 				bufferOffset += batchOffset;
 			}
 			metadataValues.Dispose();

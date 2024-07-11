@@ -7,8 +7,6 @@ using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShader {
     public class BrgStandardShaderRenderer : BrgRenderer {
-        private const int InstanceSize = (3 + 3 + 1) * 16;
-        
         private BatchMetadata _batchMetadata = new(new PerInstanceMetadataValue<float4x3>("unity_ObjectToWorld"),
             new PerInstanceMetadataValue<float4x3>("unity_WorldToObject"),
             new PerInstanceMetadataValue<float4>("_BaseColor"));
@@ -26,14 +24,16 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
                 _cpuGraphicsBuffer.Dispose();
                 _graphicsBuffer.Dispose();
             }
+
+            var bufferSizeInFloat = _batchMetadata.GetBufferSizeInFloat(outerVoxelsCount);
 			
-            _cpuGraphicsBuffer = new NativeArray<float4>(outerVoxelsCount * InstanceSize / 16, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _cpuGraphicsBuffer = new NativeArray<float4>(bufferSizeInFloat / 4, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
             var updatePositionsJob = new UpdatePositionsJob(_startPosition, _voxelSize, outerVoxelsCount, _outerVoxels, _shaderVoxelsArray, _cpuGraphicsBuffer);
             updatePositionsJob.Schedule(outerVoxelsCount,
                 outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle).Complete();
 			
-            _graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, outerVoxelsCount * InstanceSize / 4, 4);
+            _graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, bufferSizeInFloat, 4);
             _graphicsBuffer.SetData(_cpuGraphicsBuffer, 0, 0, _cpuGraphicsBuffer.Length);
         }
 

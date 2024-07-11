@@ -36,8 +36,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
                 _cpuGraphicsBuffer.Dispose();
                 _graphicsBuffer.Dispose();
             }
+            
+            var bufferSizeInFloat = _batchMetadata.GetBufferSizeInFloat(outerVoxelsCount);
 			
-            _cpuGraphicsBuffer = new NativeArray<float>(3 * 4 * 2 + outerVoxelsCount * 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _cpuGraphicsBuffer = new NativeArray<float>(bufferSizeInFloat, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             var index = outerVoxelsCount * 2;
             _cpuGraphicsBuffer[index++] = 1.0f;
             _cpuGraphicsBuffer[index++] = 0.0f;
@@ -69,8 +71,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
             updatePositionsJob.Schedule(outerVoxelsCount,
                 outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle).Complete();
 			
-            _graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, _cpuGraphicsBuffer.Length, 4);
-            _graphicsBuffer.SetData(_cpuGraphicsBuffer, 0, 0, _cpuGraphicsBuffer.Length);
+            _graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, bufferSizeInFloat, 4);
+            _graphicsBuffer.SetData(_cpuGraphicsBuffer, 0, 0, bufferSizeInFloat);
         }
 
         protected override void OnDestroy() {
