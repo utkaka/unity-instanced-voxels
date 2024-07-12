@@ -1,8 +1,16 @@
 using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata {
-    public class PerMaterialMetadataValue<T> : BatchMetadataValue<T> where T : unmanaged {
-        public PerMaterialMetadataValue(string shaderProperty) : base(shaderProperty) { }
+    public unsafe class PerMaterialMetadataValue<T> : BatchMetadataValue<T> where T : unmanaged {
+        private readonly T _value;
+
+        public PerMaterialMetadataValue(string shaderProperty, T value = default) : base(shaderProperty) {
+            _value = value;
+        }
+
+        public override void SetValueToBuffer(byte* buffer, int offset) {
+            *(T*)(buffer + offset) = _value;
+        }
         
         public override int GetBufferSize(int instanceCount) {
             return Size;

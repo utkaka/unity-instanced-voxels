@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata {
-    public abstract class BatchMetadataValue {
+    public unsafe abstract class BatchMetadataValue {
         protected readonly int Id;
         protected int Size;
 
@@ -14,6 +14,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata {
             Id = Shader.PropertyToID(shaderProperty);
             Size = size;
         }
+
+        public abstract void SetValueToBuffer(byte* buffer, int offset);
 
         public abstract int GetBufferSize(int instanceCount);
         public abstract MetadataValue GetMetadataValue(ref int offset, int instanceCount);

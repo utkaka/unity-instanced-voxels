@@ -8,7 +8,12 @@ using UnityEngine;
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShader {
     public unsafe class BrgStandardShaderRenderer : BrgRenderer {
         private BatchMetadata _batchMetadata = new(new PerInstanceMetadataValue<float4x3>("unity_ObjectToWorld"),
-            new PerInstanceMetadataValue<float4x3>("unity_WorldToObject"),
+            new PerMaterialMetadataValue<float4x3>("unity_WorldToObject", new float4x3(
+                1.0f, 1.0f, 1.0f,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f
+            )),
             new PerInstanceMetadataValue<float4>("_BaseColor"));
 
         protected override BatchMetadata BatchMetadata => _batchMetadata;
@@ -19,11 +24,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
 
         protected override JobHandle FillBuffer(int outerVoxelsCount, NativeArray<byte> buffer, JobHandle handle) {
             var bufferPointer = (byte*)buffer.GetUnsafePtr();
-            var worldToObjectPointer = bufferPointer + BatchMetadata.GetValueOffset(1, outerVoxelsCount);
             var colorPointer = bufferPointer + BatchMetadata.GetValueOffset(2, outerVoxelsCount);
             
             var updatePositionsJob = new UpdatePositionsJob(_startPosition, _voxelSize, _outerVoxels, _shaderVoxelsArray, 
-                (float4x3*)bufferPointer, (float4x3*)worldToObjectPointer, (float4*)colorPointer);
+                (float4x3*)bufferPointer, (float4*)colorPointer);
             return updatePositionsJob.Schedule(outerVoxelsCount,
                 outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle);
         }

@@ -3,6 +3,7 @@ using com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -169,6 +170,13 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_graphicsBuffer?.Dispose();
 			var bufferSize = BatchMetadata.GetBufferSize(positionsCount);
 			var cpuGraphicsBuffer = new NativeArray<byte>(bufferSize, Allocator.Temp);
+			var cpuGraphicsBufferPointer = (byte*)cpuGraphicsBuffer.GetUnsafePtr();
+			var offset = 0;
+			for (var i = 0; i < BatchMetadata.Length; i++) {
+				var metadataValue = BatchMetadata.GetValue(i);
+				metadataValue.SetValueToBuffer(cpuGraphicsBufferPointer, offset);
+				offset += metadataValue.GetBufferSize(positionsCount);
+			}
 			FillBuffer(positionsCount, cpuGraphicsBuffer, handle).Complete();
 			_graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, bufferSize / 4, 4);
 			_graphicsBuffer.SetData(cpuGraphicsBuffer, 0, 0, cpuGraphicsBuffer.Length);

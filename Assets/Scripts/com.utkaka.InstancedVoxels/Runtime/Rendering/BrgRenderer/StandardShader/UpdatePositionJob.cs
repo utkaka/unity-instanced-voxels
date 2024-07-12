@@ -19,18 +19,15 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
         [WriteOnly, NativeDisableUnsafePtrRestriction]
         private readonly float4x3* _objectToWorldPointer;
         [WriteOnly, NativeDisableUnsafePtrRestriction]
-        private readonly float4x3* _worldToObjectPointer;
-        [WriteOnly, NativeDisableUnsafePtrRestriction]
         private readonly float4* _colorPointer;
         
 
-        public UpdatePositionsJob(float3 startPosition, float voxelSize, NativeList<int> outerVoxelsIndices, NativeArray<ShaderVoxel> inputVoxels, float4x3* objectToWorldPointer, float4x3* worldToObjectPointer, float4* colorPointer) {
+        public UpdatePositionsJob(float3 startPosition, float voxelSize, NativeList<int> outerVoxelsIndices, NativeArray<ShaderVoxel> inputVoxels, float4x3* objectToWorldPointer, float4* colorPointer) {
             _startPosition = startPosition;
             _voxelSize = voxelSize;
             _outerVoxelsIndices = outerVoxelsIndices;
             _inputVoxels = inputVoxels;
             _objectToWorldPointer = objectToWorldPointer;
-            _worldToObjectPointer = worldToObjectPointer;
             _colorPointer = colorPointer;
         }
 
@@ -47,13 +44,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
                 0.0f, 0.0f, voxelPosition.x,
                 0.0f, 0.0f, voxelPosition.y,
                 0.0f, 0.0f, voxelPosition.z
-            );
-
-            _worldToObjectPointer[index] = new float4x3(
-                1.0f, 1.0f, 1.0f,
-                0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f
             );
 
             // update colors

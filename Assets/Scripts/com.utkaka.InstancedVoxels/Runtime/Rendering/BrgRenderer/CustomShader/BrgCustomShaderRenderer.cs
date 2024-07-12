@@ -14,8 +14,18 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
         
         private BatchMetadata _batchMetadata = new(new PerInstanceMetadataValue<int>("_PositionBone"),
             new PerInstanceMetadataValue<int>("_Color"),
-            new PerMaterialMetadataValue<float4x3>("unity_ObjectToWorld"),
-            new PerMaterialMetadataValue<float4x3>("unity_WorldToObject"));
+            new PerMaterialMetadataValue<float4x3>("unity_ObjectToWorld", new float4x3(
+                1.0f, 1.0f, 1.0f,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f
+            )),
+            new PerMaterialMetadataValue<float4x3>("unity_WorldToObject", new float4x3(
+                1.0f, 1.0f, 1.0f,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f
+            )));
 
         protected override BatchMetadata BatchMetadata => _batchMetadata;
 
@@ -33,64 +43,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
         protected override JobHandle FillBuffer(int outerVoxelsCount, NativeArray<byte> buffer, JobHandle handle) {
             var bufferPointer = (byte*)buffer.GetUnsafePtr();
             var colorPointer = bufferPointer + BatchMetadata.GetValueOffset(1, outerVoxelsCount);
-            var objectToWorldPointer = (float4x3*)(bufferPointer + BatchMetadata.GetValueOffset(2, outerVoxelsCount));
-            var worldToObjectPointer = (float4x3*)(bufferPointer + BatchMetadata.GetValueOffset(3, outerVoxelsCount));
-
-            *objectToWorldPointer = new float4x3(
-                1.0f, 1.0f, 1.0f,
-                0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f
-            );
-            
-            *worldToObjectPointer = new float4x3(
-                1.0f, 1.0f, 1.0f,
-                0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f
-            );
-            
             var updatePositionsJob = new UpdatePositionsJob(_outerVoxels, _shaderVoxelsArray, (float*)bufferPointer, (float*)colorPointer);
             return updatePositionsJob.Schedule(outerVoxelsCount,
                 outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle);
-            
-            /*var index = outerVoxelsCount * 2;
-            buffer[index++] = 1.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 1.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 1.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 1.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 1.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 1.0f;
-            buffer[index++] = 0.0f;
-            buffer[index++] = 0.0f;
-            buffer[index] = 0.0f;
-
-
-            var updatePositionsJob = new UpdatePositionsJob(outerVoxelsCount, _outerVoxels, _shaderVoxelsArray, buffer);
-            updatePositionsJob.Schedule(outerVoxelsCount,
-                outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle).Complete();
-			
-            _graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, bufferSizeInFloat, 4);
-            _graphicsBuffer.SetData(buffer, 0, 0, bufferSizeInFloat);*/
-        }
-
-        protected override void OnDestroy() {
-            base.OnDestroy();
         }
     }
 }
