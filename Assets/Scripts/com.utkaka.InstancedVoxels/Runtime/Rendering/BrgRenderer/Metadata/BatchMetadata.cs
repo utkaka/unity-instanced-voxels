@@ -1,27 +1,29 @@
 using System.Linq;
-using Unity.Collections;
-using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata {
     public class BatchMetadata {
         private readonly BatchMetadataValue[] _metaDataValues;
-
-        public int MetadataLength => _metaDataValues.Length;
+        public readonly int Length;
 
         public BatchMetadata(params BatchMetadataValue[] metaDataValues) {
             _metaDataValues = metaDataValues;
+            Length = _metaDataValues.Length;
         }
 
-        public int FillMetadataValues(NativeArray<MetadataValue> metadataValues, int instanceCount) {
+        public BatchMetadataValue GetValue(int index) {
+            return _metaDataValues[index];
+        }
+        
+        public int GetValueOffset(int index, int instanceCount) {
             var offset = 0;
-            for (var i = 0; i < MetadataLength; i++) {
-                metadataValues[i] = _metaDataValues[i].GetMetadataValue(ref offset, instanceCount);
+            for (var i = 0; i < index; i++) {
+                offset += _metaDataValues[i].GetBufferSize(instanceCount);
             }
             return offset;
         }
 
-        public int GetBufferSizeInFloat(int instanceCount) {
-            return _metaDataValues.Sum(metadataValue => metadataValue.GetBufferSizeInFloat(instanceCount));
+        public int GetBufferSize(int instanceCount) {
+            return _metaDataValues.Sum(metadataValue => metadataValue.GetBufferSize(instanceCount));
         }
     }
 }

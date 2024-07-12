@@ -155,8 +155,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			handle.Complete();
 			
 			var outerVoxelsCount = _outerVoxels.Length;
-			
-			UpdateBuffer(outerVoxelsCount, handle);
+
+			CreateBuffer(outerVoxelsCount, handle);
 			
 			for (var i = 0; i < 6; i++) {
 				_quadRenderers[i].UpdateOuterVoxels(outerVoxelsCount, _outerVoxels, _graphicsBuffer);
@@ -165,26 +165,38 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			CreateBatches(outerVoxelsCount);
 		}
 
-		private void CreateBatches(int positionsCount) {
+		private void CreateBuffer(int positionsCount, JobHandle handle) {
+			_graphicsBuffer?.Dispose();
+			var bufferSize = BatchMetadata.GetBufferSize(positionsCount);
+			var cpuGraphicsBuffer = new NativeArray<byte>(bufferSize, Allocator.Temp);
+			FillBuffer(positionsCount, cpuGraphicsBuffer, handle).Complete();
+			_graphicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, bufferSize / 4, 4);
+			_graphicsBuffer.SetData(cpuGraphicsBuffer, 0, 0, cpuGraphicsBuffer.Length);
+			cpuGraphicsBuffer.Dispose();
+		}
+		
+		protected abstract JobHandle FillBuffer(int outerVoxelsCount, NativeArray<byte> buffer, JobHandle handle);
 
+		private void CreateBatches(int positionsCount) {
 			DisposeBatches();
 			//BatchRendererGroup.BufferTarget == BatchBufferTarget.ConstantBuffer
 
 			var batchesCount = 1;
 			_batchIDs = new NativeArray<BatchID>(batchesCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-			var metadataValues = new NativeArray<MetadataValue>(BatchMetadata.MetadataLength, Allocator.Temp,
+			var metadataValues = new NativeArray<MetadataValue>(BatchMetadata.Length, Allocator.Temp,
 				NativeArrayOptions.UninitializedMemory);
-			int bufferOffset = 0;
+			var bufferOffset = 0;
 			for (var i = 0; i < batchesCount; i++) {
-				var batchOffset = BatchMetadata.FillMetadataValues(metadataValues, positionsCount);
+				var batchOffset = 0;
+				for (var j = 0; j < BatchMetadata.Length; j++) {
+					metadataValues[j] = BatchMetadata.GetValue(j).GetMetadataValue(ref batchOffset, positionsCount);
+				}
 				_batchIDs[i] = _batchRendererGroup.AddBatch(metadataValues, _graphicsBuffer.bufferHandle,
 					(uint)bufferOffset, 0);
 				bufferOffset += batchOffset;
 			}
 			metadataValues.Dispose();
 		}
-
-		protected abstract void UpdateBuffer(int outerVoxelsCount, JobHandle handle);
 
 		private JobHandle OnPerformCulling(BatchRendererGroup rendererGroup, BatchCullingContext cullingContext,
 			BatchCullingOutput cullingOutput, IntPtr userContext) {

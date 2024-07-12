@@ -1,30 +1,30 @@
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader {
     [BurstCompile]
-    public struct UpdatePositionsJob : IJobParallelFor {
-
-        private readonly int _colorOffset;
+    public unsafe struct UpdatePositionsJob : IJobParallelFor {
         [ReadOnly] private NativeList<int> _outerVoxelsIndices;
         [ReadOnly] private NativeArray<ShaderVoxel> _inputVoxels;
 
-        [WriteOnly, NativeDisableParallelForRestriction]
-        private NativeArray<float> _sysmemBuffer;
+        [WriteOnly, NativeDisableUnsafePtrRestriction]
+        private readonly float* _positionBoneBuffer;
+        [WriteOnly, NativeDisableUnsafePtrRestriction]
+        private readonly float* _colorBuffer;
 
-        public UpdatePositionsJob(int positionsCount,
-            NativeList<int> outerVoxelsIndices, NativeArray<ShaderVoxel> inputVoxels, NativeArray<float> sysmemBuffer) {
-            _colorOffset = positionsCount;
+        public UpdatePositionsJob(NativeList<int> outerVoxelsIndices, NativeArray<ShaderVoxel> inputVoxels, float* positionBoneBuffer, float* colorBuffer) {
             _outerVoxelsIndices = outerVoxelsIndices;
             _inputVoxels = inputVoxels;
-            _sysmemBuffer = sysmemBuffer;
+            _positionBoneBuffer = positionBoneBuffer;
+            _colorBuffer = colorBuffer;
         }
 
         public void Execute(int index) {
             var inputVoxel = _inputVoxels[_outerVoxelsIndices[index]];
-            _sysmemBuffer[index] = inputVoxel.PositionBone;
-            _sysmemBuffer[_colorOffset + index] = inputVoxel.Color;
+            _positionBoneBuffer[index] = inputVoxel.PositionBone;
+            _colorBuffer[index] = inputVoxel.Color;
         }
     }
 }
