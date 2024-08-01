@@ -1,4 +1,5 @@
 using System;
+using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
 using Unity.Jobs;

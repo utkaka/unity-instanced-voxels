@@ -136,7 +136,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			
 			if (_cullingOptions == CullingOptions.InnerSidesAndBackface || _cullingOptions == CullingOptions.InnerSidesAndBackfaceUpdate) {
 				_outerVoxels = new NativeList<int>(_positionsCount, Allocator.Persistent);
-				var cullInnerVoxelsJob = new CullInnerVoxelsJob(_box, positionsSlice, _voxelBoxMasks, _outerVoxels);
+				var cullInnerVoxelsJob = new CullInnerVoxelsJob(_box, _shaderVoxelsArray, _voxelBoxMasks, _outerVoxels);
 				handle = cullInnerVoxelsJob.Schedule(_positionsCount, handle);
 				handle.Complete();
 				var cameraPosition = Camera.main.transform.position;
@@ -218,7 +218,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			var wait = new WaitForEndOfFrame();
 			while (true) {
 				yield return wait;
-				_animationTime += _animationFrameRate * Time.deltaTime;
+				//_animationTime += _animationFrameRate * Time.deltaTime;
 				if (_animationTime >= _animationLength) {
 					_animationTime -= _animationLength;
 				}

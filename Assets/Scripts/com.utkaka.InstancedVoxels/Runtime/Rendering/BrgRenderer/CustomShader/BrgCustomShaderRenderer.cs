@@ -1,0 +1,44 @@
+using com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader {
+    public unsafe class BrgCustomShaderRenderer : BrgRenderer {
+        private static readonly int ShaderVoxelSize = Shader.PropertyToID("_VoxelSize");
+        private static readonly int ShaderStartPosition = Shader.PropertyToID("_StartPosition");
+        private static readonly int ShaderAnimationFramesCount = Shader.PropertyToID("_AnimationFramesCount");
+
+        protected override void InitVoxels() {
+            BatchMetadata = new BatchMetadata(new PerInstanceMetadataValue<int>("_PositionBone"),
+                new PerInstanceMetadataValue<int>("_Color"),
+                new PerMaterialMetadataValue<float4x3>("unity_ObjectToWorld", new float4x3(
+                    1.0f, 1.0f, 1.0f,
+                    0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f
+                )),
+                new PerMaterialMetadataValue<float4x3>("unity_WorldToObject", new float4x3(
+                    1.0f, 1.0f, 1.0f,
+                    0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f
+                )));
+            base.InitVoxels();
+            Shader.SetGlobalFloat(ShaderVoxelSize, _voxelSize);
+            Shader.SetGlobalVector(ShaderStartPosition, _startPosition);
+            Shader.SetGlobalFloat(ShaderAnimationFramesCount, _animationLength);
+        }
+
+        protected override Material GetDefaultMaterial() {
+            return new Material(Shader.Find("Custom/BrgVoxelShader"));
+        }
+
+        protected override JobHandle FillBuffer(int outerVoxelsCount, int indexOffset, byte* buffer, JobHandle handle) {
+            var colorPointer = buffer + BatchMetadata.GetValueOffset(1, outerVoxelsCount);
+            var updatePositionsJob = new UpdatePositionsJob(indexOffset, _outerVoxels, _shaderVoxelsArray, (float*)buffer, (float*)colorPointer);
+            return updatePositionsJob.Schedule(outerVoxelsCount,
+                outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle);
+        }
+    }
+}
