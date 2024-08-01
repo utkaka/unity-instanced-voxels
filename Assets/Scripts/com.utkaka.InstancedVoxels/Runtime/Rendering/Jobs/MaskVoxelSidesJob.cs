@@ -8,21 +8,21 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	public struct MaskVoxelSidesJob : IJobParallelFor {
 		private readonly VoxelsBox _voxelsBox;
 		[ReadOnly]
-		private NativeSlice<byte3> _inputPositions;
+		private NativeList<ShaderVoxel> _shaderVoxels;
 		[ReadOnly]
 		private NativeArray<byte> _boneMasks;
 		[NativeDisableParallelForRestriction]
 		private NativeArray<byte> _voxelBoxMasks;
 
-		public MaskVoxelSidesJob(VoxelsBox voxelsBox, NativeSlice<byte3> inputPositions, NativeArray<byte> boneMasks, NativeArray<byte> voxelBoxMasks) {
+		public MaskVoxelSidesJob(VoxelsBox voxelsBox, NativeList<ShaderVoxel> shaderVoxels, NativeArray<byte> boneMasks, NativeArray<byte> voxelBoxMasks) {
 			_voxelsBox = voxelsBox;
-			_inputPositions = inputPositions;
+			_shaderVoxels = shaderVoxels;
 			_boneMasks = boneMasks;
 			_voxelBoxMasks = voxelBoxMasks;
 		}
 
 		public void Execute(int index) {
-			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(_inputPositions[index]);
+			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(_shaderVoxels[index].GetPosition());
 			var mask = 1;
 			var neighbourIndex = _voxelsBox.GetLeft(voxelIndex);
 			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 1;

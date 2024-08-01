@@ -126,18 +126,17 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization {
 				new NativeHashMap<int2, int>(maxBoneIndex[0] * meshData.Length, Allocator.TempJob);
 			var compressBonesJobHandle = CompressBones(weightedVoxels, outerVoxels, voxelBones, compressedBones, fillInnerVoxelColorJobHandle);
 			
-			var compressedVoxelsPositions = new NativeList<byte3>(_box.Count, Allocator.TempJob);
-			var compressedVoxelsBones = new NativeList<byte>(_box.Count, Allocator.TempJob);
-			var compressedVoxelsColors = new NativeList<byte3>(_box.Count, Allocator.TempJob);
+			var processedVoxels = new NativeArray<bool>(_box.Count, Allocator.TempJob);
+			var plainVoxels = new NativeList<VoxelPlain>(_box.Count, Allocator.TempJob);
+			var compressedVoxels = new NativeList<VoxelCompressed>(_box.Count, Allocator.TempJob);
 			var compressVoxelsJobHandle = CompressVoxels(outerVoxels, voxelBones, voxelColors, 
-				compressedVoxelsPositions, compressedVoxelsBones,
-				compressedVoxelsColors, compressBonesJobHandle);
+				processedVoxels, plainVoxels, compressedVoxels, compressBonesJobHandle);
 			compressVoxelsJobHandle.Complete();
 
 			var voxelsAnimation = BakeAnimation(compressedBones);
 			
-			var voxels = Voxels.Create(new VoxelsBox(_box.Size - new int3(2, 2, 2)), _bounds.min, _voxelSize, compressedVoxelsPositions, compressedVoxelsColors,
-				compressedVoxelsBones, voxelsAnimation);
+			var voxels = Voxels.Create(new VoxelsBox(_box.Size - new int3(2, 2, 2)), _bounds.min, _voxelSize, plainVoxels,
+				compressedVoxels, voxelsAnimation);
 				
 			meshData.Dispose();
 			satVoxels.Dispose();
@@ -155,9 +154,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization {
 			borderVoxelsQueue.Dispose();
 			innerColors.Dispose();
 			compressedBones.Dispose();
-			compressedVoxelsPositions.Dispose();
-			compressedVoxelsBones.Dispose();
-			compressedVoxelsColors.Dispose();
+			processedVoxels.Dispose();
+			plainVoxels.Dispose();
+			compressedVoxels.Dispose();
 			
 			return voxels;
 		}
@@ -279,10 +278,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization {
 		}
 		
 		private JobHandle CompressVoxels(NativeArray<bool> outerVoxels, NativeArray<int> voxelBones,
-			NativeArray<byte3> voxelColors, NativeList<byte3> compressedPositions, NativeList<byte> compressedBones,
-			NativeList<byte3> compressedColors, JobHandle jobDependency) {
-			var compressJob = new CompressVoxelsJob(_box, outerVoxels, voxelBones, voxelColors, compressedPositions,
-				compressedBones, compressedColors);
+			NativeArray<byte3> voxelColors, NativeArray<bool> processedVoxels, NativeList<VoxelPlain> plainVoxels,
+			NativeList<VoxelCompressed> compressedVoxels, JobHandle jobDependency) {
+			var compressJob = new CompressVoxelsJob(_box, outerVoxels, voxelBones, voxelColors, processedVoxels,
+				plainVoxels, compressedVoxels);
 			return compressJob.Schedule(_box.Count, jobDependency);
 		}
 		

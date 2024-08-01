@@ -9,21 +9,21 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	public struct MaskSameBoneJob : IJobParallelFor {
 		private readonly VoxelsBox _voxelsBox;
 		[ReadOnly]
-		private NativeSlice<byte3> _inputPositions;
+		private NativeList<ShaderVoxel> _shaderVoxels;
 		[ReadOnly, NativeDisableParallelForRestriction]
 		private NativeArray<byte> _voxelBoxBones;
 		[WriteOnly]
 		private NativeArray<byte> _boneMasks;
 
-		public MaskSameBoneJob(VoxelsBox voxelsBox, NativeSlice<byte3> inputPositions, NativeArray<byte> voxelBoxBones, NativeArray<byte> boneMasks) {
+		public MaskSameBoneJob(VoxelsBox voxelsBox, NativeList<ShaderVoxel> shaderVoxels, NativeArray<byte> voxelBoxBones, NativeArray<byte> boneMasks) {
 			_voxelsBox = voxelsBox;
-			_inputPositions = inputPositions;
+			_shaderVoxels = shaderVoxels;
 			_voxelBoxBones = voxelBoxBones;
 			_boneMasks = boneMasks;
 		}
 
 		public void Execute(int index) {
-			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(_inputPositions[index]);
+			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(_shaderVoxels[index].GetPosition());
 			var mask = 1;
 			var bone = _voxelBoxBones[voxelIndex];
 			

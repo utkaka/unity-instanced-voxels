@@ -1,4 +1,5 @@
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
+using Unity.Mathematics;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering {
 	public struct ShaderVoxel {
@@ -10,7 +11,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering {
 		public byte3 GetPosition() => new((byte) ((PositionBone & 65280) >> 8), (byte) ((PositionBone & 16711680) >> 16),
 			(byte) ((PositionBone & 4278190080) >> 24));
 
-		public ShaderVoxel(byte3 position, byte bone, byte3 color) {
+		public ShaderVoxel(int3 position, int bone, byte3 color) {
 			PositionBone = bone | position.x << 8 | position.y << 16 | position.z << 24;
 			Color = color.x | color.y << 8 | color.z << 16;
 		}

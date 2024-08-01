@@ -35,7 +35,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 		
 		protected BrgQuadRenderer[] _quadRenderers;
 		
-		protected NativeArray<ShaderVoxel> _shaderVoxelsArray;
+		protected NativeList<ShaderVoxel> _shaderVoxelsArray;
 		protected NativeArray<byte> _voxelBoxMasks;
 		protected NativeList<int> _outerVoxels;
 		
@@ -77,12 +77,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			_animationFrameRate = _voxels.Animation.FrameRate;
 			_animationLength = _voxels.Animation.FramesCount;
 			
-			var colorsArray = new NativeArray<byte>(_voxels.Colors, Allocator.TempJob);
-			var colorsSlice = new NativeSlice<byte>(colorsArray).SliceConvert<byte3>();
-			var positionsArray = new NativeArray<byte>(_voxels.Indices, Allocator.TempJob);
-			var positionsSlice = new NativeSlice<byte>(positionsArray).SliceConvert<byte3>();
-			var bonesArray = new NativeArray<byte>(_voxels.Bones, Allocator.TempJob);
-			var bonesSlice = new NativeSlice<byte>(bonesArray).SliceConvert<byte>();
+			var plainVoxelsArray = new NativeArray<byte>(_voxels.PlainVoxels, Allocator.TempJob);
+			var plainVoxelsSlice = new NativeSlice<byte>(plainVoxelsArray).SliceConvert<VoxelPlain>();
+			var compressedVoxelsArray = new NativeArray<byte>(_voxels.CompressedVoxels, Allocator.TempJob);
+			var compressedVoxelsSlice = new NativeSlice<byte>(compressedVoxelsArray).SliceConvert<VoxelCompressed>();
 
 			_bonePositionsArray = _voxels.Animation.BonesPositions.Length == 0
 				? new NativeArray<float3>(2, Allocator.Persistent)
@@ -93,21 +91,27 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			_boneAnimationRotationsArray = _voxels.Animation.AnimationBonesRotations.Length == 0
 				? new NativeArray<float4>(2, Allocator.Persistent)
 				: new NativeArray<float4>(_voxels.Animation.AnimationBonesRotations, Allocator.Persistent);
-
-			_positionsCount = positionsSlice.Length;
-			_shaderVoxelsArray = new NativeArray<ShaderVoxel>(_positionsCount, Allocator.Persistent);
-			var boneMasks = new NativeArray<byte>(_positionsCount, Allocator.TempJob);
-
+			
+			_shaderVoxelsArray = new NativeList<ShaderVoxel>(_box.Count, Allocator.Persistent);
 			_voxelBoxMasks = new NativeArray<byte>(_box.Count, Allocator.Persistent);
 			var voxelBoxBones = new NativeArray<byte>(_box.Count, Allocator.TempJob);
 
-			var setupVoxelsJob = new SetupRuntimeVoxelsJob(_box, positionsSlice, colorsSlice, bonesSlice,
+			var setupPlainVoxelsJob = new SetupRuntimePlainVoxelsJob(_box, plainVoxelsSlice,
 				_shaderVoxelsArray, _voxelBoxMasks, voxelBoxBones);
-			var maskSameBoneJob = new MaskSameBoneJob(_box, positionsSlice, voxelBoxBones, boneMasks);
-			var maskVoxelSidesJob = new MaskVoxelSidesJob(_box, positionsSlice, boneMasks, _voxelBoxMasks);
+			var handle = setupPlainVoxelsJob.Schedule(plainVoxelsSlice.Length, default);
+			var setupCompressedVoxelsJob = new SetupRuntimeCompressedVoxelsJob(_box, compressedVoxelsSlice,
+				_shaderVoxelsArray, _voxelBoxMasks, voxelBoxBones);
+			handle = setupCompressedVoxelsJob.Schedule(compressedVoxelsSlice.Length, handle);
+			handle.Complete();
+			
+			_positionsCount = _shaderVoxelsArray.Length;
+			var boneMasks = new NativeArray<byte>(_positionsCount, Allocator.TempJob);
+			
+			var maskSameBoneJob = new MaskSameBoneJob(_box, _shaderVoxelsArray, voxelBoxBones, boneMasks);
+			var maskVoxelSidesJob = new MaskVoxelSidesJob(_box, _shaderVoxelsArray, boneMasks, _voxelBoxMasks);
 
 			var sliceSize = _positionsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount;
-			var handle = setupVoxelsJob.Schedule(_positionsCount, sliceSize);
+			
 			handle = maskSameBoneJob.Schedule(_positionsCount, sliceSize, handle);
 			handle = maskVoxelSidesJob.Schedule(_positionsCount, sliceSize, handle);
 
@@ -134,9 +138,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			
 			UpdateOuterVoxels(handle);
 			
-			positionsArray.Dispose();
-			colorsArray.Dispose();
-			bonesArray.Dispose();
+			plainVoxelsArray.Dispose();
+			compressedVoxelsArray.Dispose();
 
 			voxelBoxBones.Dispose();
 			boneMasks.Dispose();

@@ -40,5 +40,14 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 		public static byte3 operator +(byte3 lhs, byte3 rhs) {
 			return new byte3((byte) (lhs.x + rhs.x), (byte) (lhs.y + rhs.y), (byte) (lhs.z + rhs.z));
 		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool operator ==(byte3 lhs, byte3 rhs) {
+			return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z; }
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool operator !=(byte3 lhs, byte3 rhs) {
+			return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z;
+		}
 	}
 }

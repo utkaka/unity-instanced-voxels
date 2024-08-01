@@ -12,11 +12,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 		[SerializeField]
 		private float _voxelSize;
 		[SerializeField, HideInInspector]
-		private byte[] _indices;
+		private byte[] _plainVoxels;
 		[SerializeField, HideInInspector]
-		private byte[] _colors;
-		[SerializeField, HideInInspector]
-		private byte[] _bones;
+		private byte[] _compressedVoxels;
 		[SerializeField]
 		private VoxelsAnimation _animation;
 
@@ -26,32 +24,27 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 
 		public float VoxelSize => _voxelSize;
 
-		public byte[] Indices => _indices;
-
-		public byte[] Colors => _colors;
-		
-		public byte[] Bones => _bones;
+		public byte[] PlainVoxels => _plainVoxels;
+		public byte[] CompressedVoxels => _compressedVoxels;
 
 		public VoxelsAnimation Animation => _animation;
 
-		public static Voxels Create(VoxelsBox box, Vector3 startPosition, float voxelSize, NativeArray<byte3> positions,
-			NativeArray<byte3> colors, NativeArray<byte> bones, VoxelsAnimation animation) {
+		public static unsafe Voxels Create(VoxelsBox box, Vector3 startPosition, float voxelSize, NativeList<VoxelPlain> plainVoxels,
+			NativeList<VoxelCompressed> compressedVoxels, VoxelsAnimation animation) {
 			var instance = CreateInstance<Voxels>();
 			instance._box = box;
 			instance._startPosition = startPosition;
 			instance._voxelSize = voxelSize;
 
-			var indicesBytes = new byte[positions.Length * sizeof(byte) * 3];
-			var indexSlice = new NativeSlice<byte3>(positions).SliceConvert<byte>();
-			indexSlice.CopyTo(indicesBytes);
-			instance._indices = indicesBytes;
+			var plainBytes = new byte[plainVoxels.Length * sizeof(VoxelPlain)];
+			var plainSlice = new NativeSlice<VoxelPlain>(plainVoxels).SliceConvert<byte>();
+			plainSlice.CopyTo(plainBytes);
+			instance._plainVoxels = plainBytes;
 
-			var colorsBytes = new byte[colors.Length * sizeof(byte) * 3];
-			var colorSlice = new NativeSlice<byte3>(colors).SliceConvert<byte>();
-			colorSlice.CopyTo(colorsBytes);
-			instance._colors = colorsBytes;
-			
-			instance._bones = bones.ToArray();
+			var compressedBytes = new byte[compressedVoxels.Length * sizeof(VoxelCompressed)];
+			var compressedSlice = new NativeSlice<VoxelCompressed>(compressedVoxels).SliceConvert<byte>();
+			compressedSlice.CopyTo(compressedBytes);
+			instance._compressedVoxels = compressedBytes;
 			
 			instance._animation = animation;
 
@@ -62,9 +55,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 			_box = voxels._box;
 			_startPosition = voxels._startPosition;
 			_voxelSize = voxels._voxelSize;
-			_indices = voxels._indices;
-			_colors = voxels._colors;
-			_bones = voxels._bones;
+			_plainVoxels = voxels._plainVoxels;
+			_compressedVoxels = voxels._compressedVoxels;
 			_animation = voxels._animation;
 		}
 	}
