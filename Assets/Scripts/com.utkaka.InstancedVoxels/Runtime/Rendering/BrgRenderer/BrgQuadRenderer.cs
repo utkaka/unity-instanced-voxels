@@ -1,4 +1,3 @@
-using System;
 using com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Collections;
@@ -6,7 +5,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 {
@@ -43,7 +41,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		}
 
 		public BrgQuadRenderer(int sideIndex, float voxelSize, Vector3 startPosition, int bonesCount,
-			int animationLength, Material material, VoxelsBox box,
+			int animationLength, VoxelsBox box,
 			NativeArray<ShaderVoxel> voxels, NativeArray<byte> voxelBoxMasks, NativeArray<float3> bonePositionsArray,
 			NativeArray<float3> boneAnimationPositionsArray, NativeArray<float4> boneAnimationRotationsArray) {
 			_sideIndex = sideIndex;
@@ -65,7 +63,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_previousVisibilityBounds = new NativeArray<VoxelsBounds>(_bonesCount, Allocator.Persistent);
 		}
 
-		public void UpdateOuterVoxels(int positionsCount, NativeArray<int> outerIndices, GraphicsBuffer graphicsBuffer) {
+		public void UpdateOuterVoxels(int positionsCount, NativeArray<int> outerIndices) {
 			_updateOuterVoxelsHandle.Complete();
 
 			_outerVoxelsIndices = outerIndices;
@@ -84,7 +82,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 		}
 		
 		public JobHandle OnPerformCulling(float3 cameraPosition, float3 cameraForward,
-			int* visibleSideVoxelsArray, int offset, NativeArray<int> visibleSideVoxelsCount) {
+			int* visibleSideVoxelsArray, NativeArray<int> offsets, NativeArray<int> visibleSideVoxelsCount,
+			int batchCount, int itemsPerWindow) {
 			if (!_sideVoxelsIndices.IsCreated) return default;
 			_updateOuterVoxelsHandle.Complete();
 			NativeArray<VoxelsBounds>.Copy(_visibilityBounds, _previousVisibilityBounds);
@@ -107,15 +106,19 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 
 			var handle = default(JobHandle);
 			if (boundsChanged[0] || !_previousVisibileIndices.IsCreated) {
-				visibleSideVoxelsCount[_sideIndex] = 0;
-				_previousVisibileIndices = new NativeArray<int>(SideVoxelsIndicesLength, Allocator.Persistent);
-				var cullBackfaceJob = new FillVisibleInstancesJob(_sideIndex, _sideVoxelsIndices.AsArray(), _outerVoxelsIndices, _voxels,  currentVisibilityBoundsSlice,
-					visibleSideVoxelsArray + offset, 0, visibleSideVoxelsCount, _previousVisibileIndices);
+				for (var i = 0; i < batchCount; i++) {
+					visibleSideVoxelsCount[_sideIndex * batchCount + i] = 0;	
+				}
+				if (!_previousVisibileIndices.IsCreated) {
+					_previousVisibileIndices = new NativeArray<int>(SideVoxelsIndicesLength, Allocator.Persistent);	
+				}
+				var cullBackfaceJob = new FillVisibleInstancesJob(_sideIndex, itemsPerWindow, batchCount, _sideVoxelsIndices.AsArray(), _outerVoxelsIndices, _voxels,  currentVisibilityBoundsSlice,
+					visibleSideVoxelsArray + offsets[batchCount * _sideIndex], visibleSideVoxelsCount, _previousVisibileIndices, offsets);
 				handle = cullBackfaceJob.Schedule(_sideVoxelsIndices.Length, handle);
 			} else {
-				var pointerWithOffset = visibleSideVoxelsArray + offset;
+				var pointerWithOffset = visibleSideVoxelsArray + offsets[batchCount * _sideIndex];
 				UnsafeUtility.MemCpy(pointerWithOffset, _previousVisibileIndices.GetUnsafePtr(),
-					(long)visibleSideVoxelsCount[_sideIndex] * UnsafeUtility.SizeOf<int>());
+					(long)SideVoxelsIndicesLength * UnsafeUtility.SizeOf<int>());
 			}
 			boundsChanged.Dispose();
             return handle;

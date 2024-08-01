@@ -3,6 +3,7 @@ using UnityEngine.Rendering;
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata {
     public unsafe class PerMaterialMetadataValue<T> : BatchMetadataValue<T> where T : unmanaged {
         private readonly T _value;
+        public override bool Fixed => true;
 
         public PerMaterialMetadataValue(string shaderProperty, T value = default) : base(shaderProperty) {
             _value = value;

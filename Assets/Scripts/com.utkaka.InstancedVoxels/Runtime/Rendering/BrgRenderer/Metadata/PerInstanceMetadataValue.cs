@@ -2,6 +2,7 @@ using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.Metadata {
     public unsafe class PerInstanceMetadataValue<T> : BatchMetadataValue<T> where T : unmanaged {
+        public override bool Fixed => false;
         public PerInstanceMetadataValue(string shaderProperty) : base(shaderProperty) { }
 
         public override int GetBufferSize(int instanceCount) {

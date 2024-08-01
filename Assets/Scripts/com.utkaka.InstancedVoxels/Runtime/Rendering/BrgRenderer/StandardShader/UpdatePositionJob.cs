@@ -8,7 +8,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
 {
     [BurstCompile]
     public unsafe struct UpdatePositionsJob : IJobParallelFor {
-        
+        private readonly int _indexOffset;
         private readonly float3 _startPosition;
         private readonly float _voxelSize;
         [ReadOnly]
@@ -20,9 +20,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
         private readonly float4x3* _objectToWorldPointer;
         [WriteOnly, NativeDisableUnsafePtrRestriction]
         private readonly float4* _colorPointer;
-        
 
-        public UpdatePositionsJob(float3 startPosition, float voxelSize, NativeList<int> outerVoxelsIndices, NativeArray<ShaderVoxel> inputVoxels, float4x3* objectToWorldPointer, float4* colorPointer) {
+
+        public UpdatePositionsJob(int indexOffset, float3 startPosition, float voxelSize, NativeList<int> outerVoxelsIndices, NativeArray<ShaderVoxel> inputVoxels, float4x3* objectToWorldPointer, float4* colorPointer) {
+            _indexOffset = indexOffset;
             _startPosition = startPosition;
             _voxelSize = voxelSize;
             _outerVoxelsIndices = outerVoxelsIndices;
@@ -32,7 +33,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
         }
 
         public void Execute(int index) {
-            var inputVoxel = _inputVoxels[_outerVoxelsIndices[index]];
+            var inputVoxel = _inputVoxels[_outerVoxelsIndices[index + _indexOffset]];
 
             // compute the new current frame matrix
             var voxelPosition = new float3((inputVoxel.PositionBone & 65280) >> 8,
