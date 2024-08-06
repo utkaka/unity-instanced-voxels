@@ -11,7 +11,5 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
             Bone = bone;
             Color = color;
         }
-        
-        
     }
 }

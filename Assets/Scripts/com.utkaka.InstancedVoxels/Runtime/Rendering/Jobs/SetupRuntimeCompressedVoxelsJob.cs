@@ -9,7 +9,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
     public struct SetupRuntimeCompressedVoxelsJob : IJobFor {
         private readonly VoxelsBox _voxelsBox;
         [ReadOnly]
-        private NativeSlice<VoxelCompressed> _compressedVoxels;
+        private NativeSlice<VoxelCombined> _compressedVoxels;
         [WriteOnly]
         private NativeList<ShaderVoxel> _voxels;
         [WriteOnly, NativeDisableParallelForRestriction]
@@ -17,7 +17,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
         [WriteOnly, NativeDisableParallelForRestriction]
         private NativeArray<byte> _voxelBoxBones;
 
-        public SetupRuntimeCompressedVoxelsJob(VoxelsBox voxelsBox, NativeSlice<VoxelCompressed> compressedVoxels,
+        public SetupRuntimeCompressedVoxelsJob(VoxelsBox voxelsBox, NativeSlice<VoxelCombined> compressedVoxels,
             NativeList<ShaderVoxel> voxels,
             NativeArray<byte> voxelBoxMasks, NativeArray<byte> voxelBoxBones) {
             _voxelsBox = voxelsBox;

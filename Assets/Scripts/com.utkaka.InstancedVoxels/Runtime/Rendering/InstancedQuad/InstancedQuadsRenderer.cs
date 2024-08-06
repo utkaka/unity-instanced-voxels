@@ -90,8 +90,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 			
 			var plainVoxelsArray = new NativeArray<byte>(_voxels.PlainVoxels, Allocator.TempJob);
 			var plainVoxelsSlice = new NativeSlice<byte>(plainVoxelsArray).SliceConvert<VoxelPlain>();
-			var compressedVoxelsArray = new NativeArray<byte>(_voxels.CompressedVoxels, Allocator.TempJob);
-			var compressedVoxelsSlice = new NativeSlice<byte>(compressedVoxelsArray).SliceConvert<VoxelCompressed>();
+			var compressedVoxelsArray = new NativeArray<byte>(_voxels.CombinedVoxels, Allocator.TempJob);
+			var compressedVoxelsSlice = new NativeSlice<byte>(compressedVoxelsArray).SliceConvert<VoxelCombined>();
 
 			_bonePositionsArray = _voxels.Animation.BonesPositions.Length == 0
 				? new NativeArray<float3>(2, Allocator.Persistent)

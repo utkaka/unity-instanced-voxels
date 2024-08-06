@@ -6,7 +6,7 @@ using Unity.Mathematics;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Compression {
 	[BurstCompile]
-	public struct CompressVoxelsJob : IJobFor {
+	public struct CombineVoxelsJob : IJobFor {
 		private VoxelsBox _box;
 		[ReadOnly]
 		private NativeArray<bool> _outerVoxels;
@@ -18,11 +18,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Compression {
 		[WriteOnly]
 		private NativeList<VoxelPlain> _plainVoxels;
 		[WriteOnly]
-		private NativeList<VoxelCompressed> _compressedVoxels;
+		private NativeList<VoxelCombined> _compressedVoxels;
 
-		public CompressVoxelsJob(VoxelsBox box, NativeArray<bool> outerVoxels, NativeArray<int> voxelBones,
+		public CombineVoxelsJob(VoxelsBox box, NativeArray<bool> outerVoxels, NativeArray<int> voxelBones,
 			NativeArray<byte3> voxelColors, NativeArray<bool> processedVoxels, NativeList<VoxelPlain> plainVoxels,
-			NativeList<VoxelCompressed> compressedVoxels) : this() {
+			NativeList<VoxelCombined> compressedVoxels) : this() {
 			_box = box;
 			_outerVoxels = outerVoxels;
 			_voxelBones = voxelBones;
@@ -107,7 +107,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Compression {
 				return;
 			}
 			
-			_compressedVoxels.AddNoResize(new VoxelCompressed(position, complexSize, bone, color));
+			_compressedVoxels.AddNoResize(new VoxelCombined(position, complexSize, bone, color));
 		}
 	}
 }
