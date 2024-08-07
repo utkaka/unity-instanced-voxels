@@ -61,7 +61,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 		}
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public readonly int GetExtendedVoxelIndex(byte3 voxelPosition) {
+		public readonly int GetExtendedVoxelIndex(int3 voxelPosition) {
 			return (voxelPosition.x + 1) * _sizeYByZ + (voxelPosition.y + 1) * _size.z + voxelPosition.z + 1;
 		}
 		

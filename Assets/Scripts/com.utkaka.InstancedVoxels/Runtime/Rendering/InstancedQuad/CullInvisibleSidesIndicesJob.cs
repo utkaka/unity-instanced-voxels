@@ -31,9 +31,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 
 		public void Execute(int index) {
 			index = _outerIndices[index];
-			var voxelIndex = _inputVoxels[index].GetPosition();
+			/*var voxelIndex = _inputVoxels[index].GetPosition();
 			if ((_voxelBoxMasks[_voxelsBox.GetExtendedVoxelIndex(voxelIndex)] & _sideMask) == _sideMask) return;
-			_visibleVoxelsIndices.AddNoResize(index);
+			_visibleVoxelsIndices.AddNoResize(index);*/
 		}
 	}
 }

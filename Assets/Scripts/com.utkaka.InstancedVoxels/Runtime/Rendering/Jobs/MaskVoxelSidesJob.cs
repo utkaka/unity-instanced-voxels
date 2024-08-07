@@ -22,7 +22,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		}
 
 		public void Execute(int index) {
-			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(_shaderVoxels[index].GetPosition());
+			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(_shaderVoxels[index].Position);
 			var mask = 1;
 			var neighbourIndex = _voxelsBox.GetLeft(voxelIndex);
 			mask |= (_voxelBoxMasks[neighbourIndex] & 1) << 1;

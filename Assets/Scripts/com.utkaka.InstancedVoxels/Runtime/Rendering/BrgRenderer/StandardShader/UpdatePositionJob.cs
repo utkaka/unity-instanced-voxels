@@ -36,8 +36,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.StandardShade
             var inputVoxel = _inputVoxels[_outerVoxelsIndices[index + _indexOffset]];
 
             // compute the new current frame matrix
-            var voxelPosition = new float3((inputVoxel.PositionBone & 65280) >> 8,
-                (inputVoxel.PositionBone & 16711680) >> 16, (inputVoxel.PositionBone & 4278190080) >> 24);
+            var voxelPosition = (float3)inputVoxel.Position;
             voxelPosition = voxelPosition * _voxelSize + _startPosition;
 
             _objectToWorldPointer[index] = new float4x3(

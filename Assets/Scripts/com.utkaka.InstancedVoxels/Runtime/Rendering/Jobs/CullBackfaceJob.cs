@@ -28,9 +28,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		public void Execute(int index) {
 			index = _outerVoxelsIndices[index];
 			var inputVoxel = _inputVoxels[index];
-			var voxelIndices = inputVoxel.GetPosition();
-			var bone = inputVoxel.GetBone();
-			if (!_visibilityBounds[bone].Contains(new int3(voxelIndices.x, voxelIndices.y, voxelIndices.z))) return;
+			var bone = inputVoxel.Bone;
+			if (!_visibilityBounds[bone].Contains(inputVoxel.Position)) return;
 			_outputVoxels.AddNoResize(inputVoxel);
 		}
 	}

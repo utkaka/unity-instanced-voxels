@@ -30,7 +30,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
         }
 
         public void Execute(int index) {
-            var voxelPosition = _inputVoxels[_outerIndices[index]].GetPosition();
+            var voxelPosition = _inputVoxels[_outerIndices[index]].Position;
             if ((_voxelBoxMasks[_voxelsBox.GetExtendedVoxelIndex(voxelPosition)] & _sideMask) == _sideMask) return;
             _visibleVoxelsIndices.AddNoResize(index);
         }

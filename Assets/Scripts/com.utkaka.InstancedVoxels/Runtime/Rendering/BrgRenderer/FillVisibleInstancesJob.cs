@@ -55,9 +55,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
         public void Execute(int index) {
             var sideVoxelIndex = _sideVoxelsIndices[index];
             var inputVoxel = _inputVoxels[_outerVoxelsIndices[sideVoxelIndex]];
-            var voxelIndices = inputVoxel.GetPosition();
-            var bone = inputVoxel.GetBone();
-            if (!_visibilityBounds[bone].Contains(new int3(voxelIndices.x, voxelIndices.y, voxelIndices.z))) return;
+            var bone = inputVoxel.Bone;
+            if (!_visibilityBounds[bone].Contains(inputVoxel.Position)) return;
             while (sideVoxelIndex >= (_batchIndex + 1) * _instancesPerBatch) {
                 _outputVoxelIndices += _currentCount;
                 _batchIndex++;

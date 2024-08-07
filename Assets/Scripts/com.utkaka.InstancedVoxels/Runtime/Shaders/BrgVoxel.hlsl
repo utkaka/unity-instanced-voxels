@@ -7,12 +7,11 @@ void get_voxel_animation_position_float (
     const in float animation_lerp_ratio,
     const in float bones_count,
     const in float frames_count,
-    const in float position_bone,
+    const in float3 position,
+    const in float bone,
     out float3 voxel_position_out
     ) {
-    const int position_bone_int = (int)position_bone;
-    const float3 voxel_position = float3((position_bone_int & 65280u) >> 8, (position_bone_int & 16711680u) >> 16, (position_bone_int & 4278190080u) >> 24);
-    voxel_position_out = voxel_position * voxel_size + start_position + vertex_position;
+    voxel_position_out = position * voxel_size + start_position + vertex_position;
 }
 
 void get_voxel_color_float (const in float voxel_color, out float4 color) {

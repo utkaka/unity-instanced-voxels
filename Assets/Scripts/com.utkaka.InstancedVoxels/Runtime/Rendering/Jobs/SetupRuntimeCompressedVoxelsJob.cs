@@ -34,8 +34,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
                     for (var k = 0; k < compressedVoxel.Size.z; k++) {
                         var position = compressedVoxel.Position + new int3(i, j, k);
                         _voxels.AddNoResize(new ShaderVoxel(position, compressedVoxel.Bone, compressedVoxel.Color));
-                        var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(new byte3((byte)position.x, (byte)position.y,
-                            (byte)position.z));
+                        var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(position);
                         _voxelBoxMasks[voxelIndex] = 1;
                         _voxelBoxBones[voxelIndex] = (byte)compressedVoxel.Bone;
                     }

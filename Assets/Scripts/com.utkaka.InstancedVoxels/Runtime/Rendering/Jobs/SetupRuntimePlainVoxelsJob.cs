@@ -28,8 +28,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		public void Execute(int index) {
 			var plainVoxel = _plainVoxels[index];
 			_voxels.AddNoResize(new ShaderVoxel(plainVoxel.Position, plainVoxel.Bone, plainVoxel.Color));
-			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(new byte3((byte)plainVoxel.Position.x, (byte)plainVoxel.Position.y,
-				(byte)plainVoxel.Position.z));
+			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(plainVoxel.Position);
 			_voxelBoxMasks[voxelIndex] = 1;
 			_voxelBoxBones[voxelIndex] = (byte)plainVoxel.Bone;
 		}

@@ -24,7 +24,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		}
 
 		public void Execute(int index) {
-			var voxelPosition = _voxels[index].GetPosition();
+			var voxelPosition = _voxels[index].Position;
 			if (_voxelBoxMasks[_voxelsBox.GetExtendedVoxelIndex(voxelPosition)] >= 127) return;
 			_outerVoxelsIndices.AddNoResize(index);
 		}

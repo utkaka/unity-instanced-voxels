@@ -25,7 +25,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 
 		public void Execute(int index) {
 			var inputVoxel = _inputVoxels[index];
-			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(inputVoxel.GetPosition());
+			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(inputVoxel.Position);
 			if ((_voxelBoxMasks[voxelIndex] & _sideMask) == _sideMask) return;
 			_outputVoxels.AddNoResize(inputVoxel);
 		}
