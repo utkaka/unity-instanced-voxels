@@ -3,6 +3,7 @@ using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace com.utkaka.InstancedVoxels.Runtime.VoxelData.Compression {
+    [BurstCompile]
     public static unsafe class ByteArrayExtensions {
         public delegate int ReadInt(byte* streamPointer, int actualSize);
         public delegate void CompressBytes(byte* inputPointer, byte* outputPointer, int stride, int count);
