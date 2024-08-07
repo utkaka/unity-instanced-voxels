@@ -103,11 +103,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Voxelization.Compression {
 			}
 
 			if (complexSize is { x: 1, y: 1, z: 1 }) {
-				_plainVoxels.AddNoResize(new VoxelPlain(position, bone, color));
+				_plainVoxels.AddNoResize(new VoxelPlain(position - new int3(1, 1, 1), bone, color));
 				return;
 			}
 			
-			_compressedVoxels.AddNoResize(new VoxelCombined(position, complexSize, bone, color));
+			_compressedVoxels.AddNoResize(new VoxelCombined(position - new int3(1, 1, 1), complexSize, bone, color));
 		}
 	}
 }
