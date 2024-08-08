@@ -3,6 +3,7 @@ Shader "Custom/BrgVoxelShader"
         Properties
         {
             _Position("Position", Vector) = (0, 0, 0, 0)
+            _Size("Size", Vector) = (0, 0, 0, 0)
             _Color("Color", Float) = 0
             _Bone("Bone", Float) = 0
             [HideInInspector]_QueueOffset("_QueueOffset", Float) = 0
@@ -288,6 +289,7 @@ Shader "Custom/BrgVoxelShader"
                 float _Color;
                 float3 _Position;
                 float _Bone;
+                float3 _Size;
                 CBUFFER_END
                 
                 #if defined(DOTS_INSTANCING_ON)
@@ -296,6 +298,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Color)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Position)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Bone)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Size)
                 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
                 // DOTS instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
@@ -305,6 +308,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DEFINE_INSTANCED_PROP(float, _Color)
                     UNITY_DEFINE_INSTANCED_PROP(float3, _Position)
                     UNITY_DEFINE_INSTANCED_PROP(float, _Bone)
+                    UNITY_DEFINE_INSTANCED_PROP(float3, _Size)
                 UNITY_INSTANCING_BUFFER_END(SGPerInstanceData)
                 // Unity instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_INSTANCED_PROP(SGPerInstanceData, var)
@@ -360,9 +364,10 @@ Shader "Custom/BrgVoxelShader"
                     float _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float = _BonesCount;
                     float _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float = _AnimationFramesCount;
                     float3 _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Position, float3);
+                    float3 _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Size, float3);
                     float _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Bone, float);
                     float3 _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
-                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
+                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
                     description.Position = _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
                     description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
@@ -736,6 +741,7 @@ Shader "Custom/BrgVoxelShader"
                 float _Color;
                 float3 _Position;
                 float _Bone;
+                float3 _Size;
                 CBUFFER_END
                 
                 #if defined(DOTS_INSTANCING_ON)
@@ -744,6 +750,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Color)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Position)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Bone)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Size)
                 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
                 // DOTS instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
@@ -753,6 +760,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DEFINE_INSTANCED_PROP(float, _Color)
                     UNITY_DEFINE_INSTANCED_PROP(float3, _Position)
                     UNITY_DEFINE_INSTANCED_PROP(float, _Bone)
+                    UNITY_DEFINE_INSTANCED_PROP(float3, _Size)
                 UNITY_INSTANCING_BUFFER_END(SGPerInstanceData)
                 // Unity instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_INSTANCED_PROP(SGPerInstanceData, var)
@@ -808,9 +816,10 @@ Shader "Custom/BrgVoxelShader"
                     float _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float = _BonesCount;
                     float _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float = _AnimationFramesCount;
                     float3 _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Position, float3);
+                    float3 _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Size, float3);
                     float _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Bone, float);
                     float3 _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
-                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
+                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
                     description.Position = _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
                     description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
@@ -1087,6 +1096,7 @@ Shader "Custom/BrgVoxelShader"
                 float _Color;
                 float3 _Position;
                 float _Bone;
+                float3 _Size;
                 CBUFFER_END
                 
                 #if defined(DOTS_INSTANCING_ON)
@@ -1095,6 +1105,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Color)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Position)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Bone)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Size)
                 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
                 // DOTS instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
@@ -1104,6 +1115,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DEFINE_INSTANCED_PROP(float, _Color)
                     UNITY_DEFINE_INSTANCED_PROP(float3, _Position)
                     UNITY_DEFINE_INSTANCED_PROP(float, _Bone)
+                    UNITY_DEFINE_INSTANCED_PROP(float3, _Size)
                 UNITY_INSTANCING_BUFFER_END(SGPerInstanceData)
                 // Unity instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_INSTANCED_PROP(SGPerInstanceData, var)
@@ -1159,9 +1171,10 @@ Shader "Custom/BrgVoxelShader"
                     float _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float = _BonesCount;
                     float _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float = _AnimationFramesCount;
                     float3 _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Position, float3);
+                    float3 _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Size, float3);
                     float _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Bone, float);
                     float3 _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
-                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
+                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
                     description.Position = _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
                     description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
@@ -1434,6 +1447,7 @@ Shader "Custom/BrgVoxelShader"
                 float _Color;
                 float3 _Position;
                 float _Bone;
+                float3 _Size;
                 CBUFFER_END
                 
                 #if defined(DOTS_INSTANCING_ON)
@@ -1442,6 +1456,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Color)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Position)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Bone)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Size)
                 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
                 // DOTS instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
@@ -1451,6 +1466,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DEFINE_INSTANCED_PROP(float, _Color)
                     UNITY_DEFINE_INSTANCED_PROP(float3, _Position)
                     UNITY_DEFINE_INSTANCED_PROP(float, _Bone)
+                    UNITY_DEFINE_INSTANCED_PROP(float3, _Size)
                 UNITY_INSTANCING_BUFFER_END(SGPerInstanceData)
                 // Unity instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_INSTANCED_PROP(SGPerInstanceData, var)
@@ -1506,9 +1522,10 @@ Shader "Custom/BrgVoxelShader"
                     float _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float = _BonesCount;
                     float _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float = _AnimationFramesCount;
                     float3 _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Position, float3);
+                    float3 _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Size, float3);
                     float _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Bone, float);
                     float3 _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
-                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
+                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
                     description.Position = _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
                     description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
@@ -1789,6 +1806,7 @@ Shader "Custom/BrgVoxelShader"
                 float _Color;
                 float3 _Position;
                 float _Bone;
+                float3 _Size;
                 CBUFFER_END
                 
                 #if defined(DOTS_INSTANCING_ON)
@@ -1797,6 +1815,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Color)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Position)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Bone)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Size)
                 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
                 // DOTS instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
@@ -1806,6 +1825,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DEFINE_INSTANCED_PROP(float, _Color)
                     UNITY_DEFINE_INSTANCED_PROP(float3, _Position)
                     UNITY_DEFINE_INSTANCED_PROP(float, _Bone)
+                    UNITY_DEFINE_INSTANCED_PROP(float3, _Size)
                 UNITY_INSTANCING_BUFFER_END(SGPerInstanceData)
                 // Unity instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_INSTANCED_PROP(SGPerInstanceData, var)
@@ -1861,9 +1881,10 @@ Shader "Custom/BrgVoxelShader"
                     float _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float = _BonesCount;
                     float _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float = _AnimationFramesCount;
                     float3 _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Position, float3);
+                    float3 _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Size, float3);
                     float _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Bone, float);
                     float3 _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
-                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
+                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
                     description.Position = _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
                     description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
@@ -2128,6 +2149,7 @@ Shader "Custom/BrgVoxelShader"
                 float _Color;
                 float3 _Position;
                 float _Bone;
+                float3 _Size;
                 CBUFFER_END
                 
                 #if defined(DOTS_INSTANCING_ON)
@@ -2136,6 +2158,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Color)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Position)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Bone)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Size)
                 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
                 // DOTS instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
@@ -2145,6 +2168,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DEFINE_INSTANCED_PROP(float, _Color)
                     UNITY_DEFINE_INSTANCED_PROP(float3, _Position)
                     UNITY_DEFINE_INSTANCED_PROP(float, _Bone)
+                    UNITY_DEFINE_INSTANCED_PROP(float3, _Size)
                 UNITY_INSTANCING_BUFFER_END(SGPerInstanceData)
                 // Unity instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_INSTANCED_PROP(SGPerInstanceData, var)
@@ -2200,9 +2224,10 @@ Shader "Custom/BrgVoxelShader"
                     float _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float = _BonesCount;
                     float _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float = _AnimationFramesCount;
                     float3 _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Position, float3);
+                    float3 _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Size, float3);
                     float _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Bone, float);
                     float3 _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
-                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
+                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
                     description.Position = _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
                     description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
@@ -2460,6 +2485,7 @@ Shader "Custom/BrgVoxelShader"
                 float _Color;
                 float3 _Position;
                 float _Bone;
+                float3 _Size;
                 CBUFFER_END
                 
                 #if defined(DOTS_INSTANCING_ON)
@@ -2468,6 +2494,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Color)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Position)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Bone)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Size)
                 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
                 // DOTS instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
@@ -2477,6 +2504,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DEFINE_INSTANCED_PROP(float, _Color)
                     UNITY_DEFINE_INSTANCED_PROP(float3, _Position)
                     UNITY_DEFINE_INSTANCED_PROP(float, _Bone)
+                    UNITY_DEFINE_INSTANCED_PROP(float3, _Size)
                 UNITY_INSTANCING_BUFFER_END(SGPerInstanceData)
                 // Unity instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_INSTANCED_PROP(SGPerInstanceData, var)
@@ -2532,9 +2560,10 @@ Shader "Custom/BrgVoxelShader"
                     float _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float = _BonesCount;
                     float _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float = _AnimationFramesCount;
                     float3 _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Position, float3);
+                    float3 _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Size, float3);
                     float _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Bone, float);
                     float3 _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
-                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
+                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
                     description.Position = _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
                     description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;
@@ -2792,6 +2821,7 @@ Shader "Custom/BrgVoxelShader"
                 float _Color;
                 float3 _Position;
                 float _Bone;
+                float3 _Size;
                 CBUFFER_END
                 
                 #if defined(DOTS_INSTANCING_ON)
@@ -2800,6 +2830,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Color)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Position)
                     UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float, _Bone)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_REQUIRED(float3, _Size)
                 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
                 // DOTS instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
@@ -2809,6 +2840,7 @@ Shader "Custom/BrgVoxelShader"
                     UNITY_DEFINE_INSTANCED_PROP(float, _Color)
                     UNITY_DEFINE_INSTANCED_PROP(float3, _Position)
                     UNITY_DEFINE_INSTANCED_PROP(float, _Bone)
+                    UNITY_DEFINE_INSTANCED_PROP(float3, _Size)
                 UNITY_INSTANCING_BUFFER_END(SGPerInstanceData)
                 // Unity instancing usage macros
                 #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_INSTANCED_PROP(SGPerInstanceData, var)
@@ -2864,9 +2896,10 @@ Shader "Custom/BrgVoxelShader"
                     float _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float = _BonesCount;
                     float _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float = _AnimationFramesCount;
                     float3 _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Position, float3);
+                    float3 _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3 = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Size, float3);
                     float _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_Bone, float);
                     float3 _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
-                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
+                    get_voxel_animation_position_float(IN.ObjectSpacePosition, _Property_b300c97a938a4adf9d2e9a08e2d3cadd_Out_0_Float, _Property_ee6056fe546c4db49a1583b1752f4d1a_Out_0_Vector3, _Property_166ac1cb418d493ba0fcc04bfef10f8e_Out_0_Float, _Property_1c7aaa9fdc7241a28d02ec752b7e9d77_Out_0_Float, _Property_6db7a38885a54b30adf24c400a367166_Out_0_Float, _Property_68317bb6ca1e49b4847fec07ad72eda7_Out_0_Float, _Property_daea6bd84ca24bd48eaafe89aa9eeada_Out_0_Float, _Property_53818739345441bdbc47d90fcc109e99_Out_0_Vector3, _Property_a14bbf2b3f914c15a60716623316fca4_Out_0_Vector3, _Property_5679a0f396ff43baa8beaa588430bf91_Out_0_Float, _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3);
                     description.Position = _getvoxelanimationpositionCustomFunction_7a1d3bc3fd8c4d6a89010e0f60693545_PositionOut_2_Vector3;
                     description.Normal = IN.ObjectSpaceNormal;
                     description.Tangent = IN.ObjectSpaceTangent;

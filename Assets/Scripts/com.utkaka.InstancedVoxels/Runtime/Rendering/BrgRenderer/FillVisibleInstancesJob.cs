@@ -56,19 +56,27 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
             var sideVoxelIndex = _sideVoxelsIndices[index];
             var inputVoxel = _inputVoxels[_outerVoxelsIndices[sideVoxelIndex]];
             var bone = inputVoxel.Bone;
-            if (!_visibilityBounds[bone].Contains(inputVoxel.Position)) return;
-            while (sideVoxelIndex >= (_batchIndex + 1) * _instancesPerBatch) {
-                _outputVoxelIndices += _currentCount;
-                _batchIndex++;
-                _visibleSideVoxelsOffsets[_sideIndex * _batchesCount + _batchIndex] =
-                    _visibleSideVoxelsOffsets[_sideIndex * _batchesCount + _batchIndex - 1] + _currentCount;
-                _currentCount = 0;
+            for (var i = 0; i < inputVoxel.Size.x; i++) {
+                for (var j = 0; j < inputVoxel.Size.y; j++) {
+                    for (var k = 0; k < inputVoxel.Size.z; k++) {
+                        var position = inputVoxel.Position1 + new int3(i, j, k);
+                        if (!_visibilityBounds[bone].Contains(position)) continue;
+                        while (sideVoxelIndex >= (_batchIndex + 1) * _instancesPerBatch) {
+                            _outputVoxelIndices += _currentCount;
+                            _batchIndex++;
+                            _visibleSideVoxelsOffsets[_sideIndex * _batchesCount + _batchIndex] =
+                                _visibleSideVoxelsOffsets[_sideIndex * _batchesCount + _batchIndex - 1] + _currentCount;
+                            _currentCount = 0;
+                        }
+                        _previousVisibleIndices[_totalCount] = sideVoxelIndex - _batchIndex * _instancesPerBatch;
+                        _outputVoxelIndices[_currentCount] = sideVoxelIndex - _batchIndex * _instancesPerBatch;
+                        _currentCount++;
+                        _totalCount++;
+                        _visibleSideVoxelsCount[_sideIndex * _batchesCount + _batchIndex] = _currentCount;
+                        return;
+                    }
+                }
             }
-            _previousVisibleIndices[_totalCount] = sideVoxelIndex - _batchIndex * _instancesPerBatch;
-            _outputVoxelIndices[_currentCount] = sideVoxelIndex - _batchIndex * _instancesPerBatch;
-            _currentCount++;
-            _totalCount++;
-            _visibleSideVoxelsCount[_sideIndex * _batchesCount + _batchIndex] = _currentCount;
         }
     }
 }

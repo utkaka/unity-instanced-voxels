@@ -26,11 +26,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		}
 
 		public void Execute(int index) {
-			index = _outerVoxelsIndices[index];
+			/*index = _outerVoxelsIndices[index];
 			var inputVoxel = _inputVoxels[index];
 			var bone = inputVoxel.Bone;
 			if (!_visibilityBounds[bone].Contains(inputVoxel.Position)) return;
-			_outputVoxels.AddNoResize(inputVoxel);
+			_outputVoxels.AddNoResize(inputVoxel);*/
 		}
 	}
 }

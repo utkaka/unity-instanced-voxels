@@ -92,7 +92,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 				? new NativeArray<float4>(2, Allocator.Persistent)
 				: new NativeArray<float4>(_voxels.Animation.AnimationBonesRotations, Allocator.Persistent);
 			
-			_shaderVoxelsArray = new NativeList<ShaderVoxel>(_box.Count, Allocator.Persistent);
+			_shaderVoxelsArray = new NativeList<ShaderVoxel>(plainVoxelsSlice.Length + compressedVoxelsSlice.Length, Allocator.Persistent);
 			_voxelBoxMasks = new NativeArray<byte>(_box.Count, Allocator.Persistent);
 			var voxelBoxBones = new NativeArray<byte>(_box.Count, Allocator.TempJob);
 
@@ -104,8 +104,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			handle = setupCompressedVoxelsJob.Schedule(compressedVoxelsSlice.Length, handle);
 			handle.Complete();
 			
+			plainVoxelsArray.Dispose();
+			compressedVoxelsArray.Dispose();
+			_shaderVoxelsArray.TrimExcess();
 			_positionsCount = _shaderVoxelsArray.Length;
-			var boneMasks = new NativeArray<byte>(_positionsCount, Allocator.TempJob);
+			var boneMasks = new NativeArray<byte>(_box.Count, Allocator.TempJob);
 			
 			var maskSameBoneJob = new MaskSameBoneJob(_box, _shaderVoxelsArray, voxelBoxBones, boneMasks);
 			var maskVoxelSidesJob = new MaskVoxelSidesJob(_box, _shaderVoxelsArray, boneMasks, _voxelBoxMasks);
@@ -138,11 +141,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			
 			UpdateOuterVoxels(handle);
 			
-			plainVoxelsArray.Dispose();
-			compressedVoxelsArray.Dispose();
+			/*
 
 			voxelBoxBones.Dispose();
-			boneMasks.Dispose();
+			boneMasks.Dispose();*/
 			
 			_voxels = null;
 		}
@@ -154,7 +156,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			var cullInnerVoxelsJob = new CullInnerVoxelsJob(_box, _shaderVoxelsArray, _voxelBoxMasks, _outerVoxels);
 			handle = cullInnerVoxelsJob.Schedule(_positionsCount, handle);
 			handle.Complete();
-			
+			_outerVoxels.TrimExcess();
 			var outerVoxelsCount = _outerVoxels.Length;
 
 			CreateBuffer(outerVoxelsCount, handle);

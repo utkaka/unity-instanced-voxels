@@ -29,11 +29,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 
         public void Execute(int index) {
             var compressedVoxel = _compressedVoxels[index];
+            _voxels.AddNoResize(new ShaderVoxel(compressedVoxel.Position, compressedVoxel.Size, compressedVoxel.Bone, compressedVoxel.Color));
             for (var i = 0; i < compressedVoxel.Size.x; i++) {
                 for (var j = 0; j < compressedVoxel.Size.y; j++) {
                     for (var k = 0; k < compressedVoxel.Size.z; k++) {
                         var position = compressedVoxel.Position + new int3(i, j, k);
-                        _voxels.AddNoResize(new ShaderVoxel(position, compressedVoxel.Bone, compressedVoxel.Color));
                         var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(position);
                         _voxelBoxMasks[voxelIndex] = 1;
                         _voxelBoxBones[voxelIndex] = (byte)compressedVoxel.Bone;

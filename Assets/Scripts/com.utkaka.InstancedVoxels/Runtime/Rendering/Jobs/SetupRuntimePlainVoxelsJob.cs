@@ -2,6 +2,7 @@ using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	[BurstCompile]
@@ -27,7 +28,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 
 		public void Execute(int index) {
 			var plainVoxel = _plainVoxels[index];
-			_voxels.AddNoResize(new ShaderVoxel(plainVoxel.Position, plainVoxel.Bone, plainVoxel.Color));
+			_voxels.AddNoResize(new ShaderVoxel(plainVoxel.Position, new int3(1, 1, 1), plainVoxel.Bone, plainVoxel.Color));
 			var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(plainVoxel.Position);
 			_voxelBoxMasks[voxelIndex] = 1;
 			_voxelBoxBones[voxelIndex] = (byte)plainVoxel.Bone;

@@ -8,10 +8,11 @@ void get_voxel_animation_position_float (
     const in float bones_count,
     const in float frames_count,
     const in float3 position,
+    const in float3 size,
     const in float bone,
     out float3 voxel_position_out
     ) {
-    voxel_position_out = position * voxel_size + start_position + vertex_position;
+    voxel_position_out = position * voxel_size + start_position + vertex_position * size;
 }
 
 void get_voxel_color_float (const in float voxel_color, out float4 color) {

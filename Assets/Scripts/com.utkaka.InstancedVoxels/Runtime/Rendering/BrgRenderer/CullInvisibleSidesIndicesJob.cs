@@ -2,6 +2,7 @@ using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
     [BurstCompile]
@@ -30,9 +31,18 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
         }
 
         public void Execute(int index) {
-            var voxelPosition = _inputVoxels[_outerIndices[index]].Position;
-            if ((_voxelBoxMasks[_voxelsBox.GetExtendedVoxelIndex(voxelPosition)] & _sideMask) == _sideMask) return;
-            _visibleVoxelsIndices.AddNoResize(index);
+            var compressedVoxel = _inputVoxels[_outerIndices[index]];
+            for (var i = 0; i < compressedVoxel.Size.x; i++) {
+                for (var j = 0; j < compressedVoxel.Size.y; j++) {
+                    for (var k = 0; k < compressedVoxel.Size.z; k++) {
+                        var position = compressedVoxel.Position1 + new int3(i, j, k);
+                        var voxelIndex = _voxelsBox.GetExtendedVoxelIndex(position);
+                        if ((_voxelBoxMasks[voxelIndex] & _sideMask) == _sideMask) continue;
+                        _visibleVoxelsIndices.AddNoResize(index);
+                        return;
+                    }
+                }
+            }
         }
     }
 }
