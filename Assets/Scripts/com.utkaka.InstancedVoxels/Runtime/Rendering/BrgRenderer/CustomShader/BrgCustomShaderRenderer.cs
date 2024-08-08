@@ -10,9 +10,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
         private static readonly int ShaderAnimationFramesCount = Shader.PropertyToID("_AnimationFramesCount");
 
         protected override void InitVoxels() {
-            BatchMetadata = new BatchMetadata(new PerInstanceMetadataValue<int3>("_Position"),
-                new PerInstanceMetadataValue<int>("_Bone"),
-                new PerInstanceMetadataValue<int>("_Color"),
+            BatchMetadata = new BatchMetadata(
                 new PerMaterialMetadataValue<float4x3>("unity_ObjectToWorld", new float4x3(
                     1.0f, 1.0f, 1.0f,
                     0.0f, 0.0f, 0.0f,
@@ -24,7 +22,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
                     0.0f, 0.0f, 0.0f,
                     0.0f, 0.0f, 0.0f,
                     0.0f, 0.0f, 0.0f
-                )));
+                )),
+                new PerInstanceMetadataValue<int3>("_Position"),
+                new PerInstanceMetadataValue<int>("_Bone"),
+                new PerInstanceMetadataValue<int>("_Color"));
             base.InitVoxels();
             Shader.SetGlobalFloat(ShaderVoxelSize, _voxelSize);
             Shader.SetGlobalVector(ShaderStartPosition, _startPosition);
@@ -36,10 +37,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
         }
 
         protected override JobHandle FillBuffer(int outerVoxelsCount, int indexOffset, byte* buffer, JobHandle handle) {
-            var bonePointer = buffer + BatchMetadata.GetValueOffset(1, outerVoxelsCount);
-            var colorPointer = buffer + BatchMetadata.GetValueOffset(2, outerVoxelsCount);
+            var positionPointer = buffer + BatchMetadata.GetValueOffset(2, outerVoxelsCount);
+            var bonePointer = buffer + BatchMetadata.GetValueOffset(3, outerVoxelsCount);
+            var colorPointer = buffer + BatchMetadata.GetValueOffset(4, outerVoxelsCount);
             var updatePositionsJob = new UpdatePositionsJob(indexOffset, _outerVoxels, _shaderVoxelsArray,
-                (float3*)buffer, (float*)bonePointer, (float*)colorPointer);
+                (float3*)positionPointer, (float*)bonePointer, (float*)colorPointer);
             return updatePositionsJob.Schedule(outerVoxelsCount,
                 outerVoxelsCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle);
         }
