@@ -24,9 +24,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
                     0.0f, 0.0f, 0.0f
                 )),
                 new PerInstanceMetadataValue<int3>("_Position"),
-                new PerInstanceMetadataValue<int3>("_Size"),
                 new PerInstanceMetadataValue<int>("_Bone"),
-                new PerInstanceMetadataValue<int>("_Color"));
+                new PerInstanceMetadataValue<int>("_Color"),
+                new PerInstanceMetadataValue<int3>("_Size"));
             base.InitVoxels();
             Shader.SetGlobalFloat(ShaderVoxelSize, _voxelSize);
             Shader.SetGlobalVector(ShaderStartPosition, _startPosition);
@@ -39,9 +39,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer.CustomShader 
 
         protected override JobHandle FillBuffer(int outerVoxelsCount, int indexOffset, byte* buffer, JobHandle handle) {
             var positionPointer = buffer + BatchMetadata.GetValueOffset(2, outerVoxelsCount);
-            var sizePointer = buffer + BatchMetadata.GetValueOffset(3, outerVoxelsCount);
-            var bonePointer = buffer + BatchMetadata.GetValueOffset(4, outerVoxelsCount);
-            var colorPointer = buffer + BatchMetadata.GetValueOffset(5, outerVoxelsCount);
+            var sizePointer = buffer + BatchMetadata.GetValueOffset(5, outerVoxelsCount);
+            var bonePointer = buffer + BatchMetadata.GetValueOffset(3, outerVoxelsCount);
+            var colorPointer = buffer + BatchMetadata.GetValueOffset(4, outerVoxelsCount);
             var updatePositionsJob = new UpdatePositionsJob(indexOffset, _outerVoxels, _shaderVoxelsArray,
                 (float3*)positionPointer, (float3*)sizePointer, (float*)bonePointer, (float*)colorPointer);
             return updatePositionsJob.Schedule(outerVoxelsCount,
