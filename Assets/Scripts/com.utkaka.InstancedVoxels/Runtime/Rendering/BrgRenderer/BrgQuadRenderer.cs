@@ -30,6 +30,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 
 		private JobHandle _updateOuterVoxelsHandle;
 
+		private float3 _sideVertex1;
+		private float3 _sideVertex2;
+		private float3 _sideVertex3;
 		private NativeArray<int> _outerVoxelsIndices;
 		private NativeList<int> _sideVoxelsIndices;
 		
@@ -59,6 +62,12 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_animationNextFrame = 1;
 			_animationLerpRatio = 0.0f;
 
+			var sideVertices = VoxelMeshGenerator.GetSideVertices(sideIndex, voxelSize);
+			_sideVertex1 = sideVertices[0];
+			_sideVertex2 = sideVertices[1];
+			_sideVertex3 = sideVertices[2];
+			sideVertices.Dispose();
+
 			_visibilityBounds = new NativeArray<VoxelsBounds>(_bonesCount, Allocator.Persistent);
 			_previousVisibilityBounds = new NativeArray<VoxelsBounds>(_bonesCount, Allocator.Persistent);
 		}
@@ -81,7 +90,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			_updateOuterVoxelsHandle = cullInvisibleSidesJob.Schedule(positionsCount, default);
 		}
 		
-		public JobHandle OnPerformCulling(float3 cameraPosition, float3 cameraForward,
+		public JobHandle OnPerformCulling(float4x4 cullingMatrix,
 			int* visibleSideVoxelsArray, NativeArray<int> offsets, NativeArray<int> visibleSideVoxelsCount,
 			int batchCount, int itemsPerWindow) {
 			if (!_sideVoxelsIndices.IsCreated) return default;
@@ -90,7 +99,8 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer
 			var previousVisibilityBoundsSlice = new NativeSlice<VoxelsBounds>(_previousVisibilityBounds, 0, _bonesCount);
 			var currentVisibilityBoundsSlice = new NativeSlice<VoxelsBounds>(_visibilityBounds, 0, _bonesCount);
 			var calculateVisibilityBoundsJob =
-				new CalculateVisibilityBoundsJob(_voxelSize, _startPosition, VoxelMeshGenerator.GetSideNormal(_sideIndex), _box, cameraPosition, cameraForward,
+				new CalculateVisibilityBoundsJob(_voxelSize, _startPosition, _sideVertex1, _sideVertex2, _sideVertex3,
+					_box, cullingMatrix,
 					_animationLength, _animationCurrentFrame, _animationNextFrame, _animationLerpRatio,
 					_bonePositionsArray, _boneAnimationPositionsArray, _boneAnimationRotationsArray,
 					currentVisibilityBoundsSlice);

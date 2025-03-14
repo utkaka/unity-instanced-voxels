@@ -146,7 +146,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 				var cameraPosition = Camera.main.transform.position;
 				var cameraForward = Camera.main.transform.forward;
 				JobHandle visibilityBoundsHandle = default;
-				for (var i = 0; i < 6; i++) {
+				/*for (var i = 0; i < 6; i++) {
 					var calculateVisibilityBoundsJob =
 						new CalculateVisibilityBoundsJob(_voxelSize, _startPosition, VoxelMeshGenerator.GetSideNormal(i), _box, cameraPosition, cameraForward,
 							_voxels.Animation.FramesCount, 0, 1, 0.0f,
@@ -155,7 +155,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 					visibilityBoundsHandle = JobHandle.CombineDependencies(visibilityBoundsHandle,
 						calculateVisibilityBoundsJob.Schedule(_bonesCount,
 							_bonesCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerMaximumCount, handle));
-				}
+				}*/
 
 				handle = visibilityBoundsHandle;
 			}
@@ -181,7 +181,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 
 		private void LateUpdate() {
 			if (_cullingOptions != CullingOptions.InnerSidesAndBackfaceUpdate) return;
-			var cameraPosition = Camera.main.transform.position;
+			/*var cameraPosition = Camera.main.transform.position;
 			var cameraForward = Camera.main.transform.forward;
 			NativeArray<VoxelsBounds>.Copy(_visibilityBounds, _previousVisibilityBounds);
 			for (var i = 0; i < 6; i++) {
@@ -203,7 +203,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.InstancedQuad {
 					_quadRenderers[i].CullingUpdate(_shaderVoxelsArray, _visibilityBounds, visibilityBoundsHandle);
 				}
 				boundsChanged.Dispose();
-			}
+			}*/
 		}
 		
 		private void Update() {

@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
+	[ExecuteInEditMode]
     public abstract unsafe class BrgRenderer : MonoBehaviour, IVoxelRenderer {
 		[SerializeField]
 		protected Voxels _voxels;
@@ -60,7 +61,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			}
 		}
 		
-		private void Start() {
+		private void OnEnable() {
 			InitVoxels();
 		}
 
@@ -145,8 +146,6 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 
 			voxelBoxBones.Dispose();
 			boneMasks.Dispose();*/
-			
-			_voxels = null;
 		}
 
 		private void UpdateOuterVoxels(JobHandle handle) {
@@ -246,6 +245,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 
 		private JobHandle OnPerformCulling(BatchRendererGroup rendererGroup, BatchCullingContext cullingContext,
 			BatchCullingOutput cullingOutput, IntPtr userContext) {
+			
 			var offset = 0;
 			var batchesCount = _batchIDs.Length;
 			
@@ -256,9 +256,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			// !!!!!!!
 			var visibleSideVoxelsArray = FillDrawCommandJob.Malloc<int>((uint)offset);
 			
-			var cameraTransform = Camera.main.transform;
-			var cameraPosition = cameraTransform.position;
-			var cameraForward = cameraTransform.forward;
+			var cullingMatrix = cullingContext.cullingSplits[0].cullingMatrix;
 			
 			
 			var handle = default(JobHandle);
@@ -266,7 +264,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			if (itemsPerWindow < 0) itemsPerWindow = _outerVoxels.Length;
 			for (var i = 0; i < 6; i++) {
 				handle = JobHandle.CombineDependencies(handle,
-					_quadRenderers[i].OnPerformCulling(cameraPosition, cameraForward, visibleSideVoxelsArray,
+					_quadRenderers[i].OnPerformCulling(cullingMatrix, visibleSideVoxelsArray,
 						_visibleVoxelsOffsets, _visibleSideVoxelsCount, _batchIDs.Length, itemsPerWindow));
 			}
 			
@@ -278,7 +276,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			return handle;
 		}
 
-		protected virtual void OnDestroy() {
+		private void OnDisable() {
 			DisposeBatches();
 			_batchRendererGroup.UnregisterMaterial(_batchMaterialID);
 			for (var i = 0; i < 6; i++) {
@@ -286,8 +284,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			}
 			_batchRendererGroup.Dispose();
 			
+
 			for (var i = 0; i < 6; i++) {
-				_quadRenderers[i].Dispose();
+				_quadRenderers[i]?.Dispose();
 			}
 
 			_visibleSideVoxelsCount.Dispose();
@@ -298,13 +297,9 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			_bonePositionsArray.Dispose();
 			_boneAnimationPositionsArray.Dispose();
 			_boneAnimationRotationsArray.Dispose();
-			
 			_shaderVoxelsArray.Dispose();
-
 			_voxelBoxMasks.Dispose();
-			
 			_graphicsBuffer.Dispose();
-
 			_batchMeshIDs.Dispose();
 		}
 		

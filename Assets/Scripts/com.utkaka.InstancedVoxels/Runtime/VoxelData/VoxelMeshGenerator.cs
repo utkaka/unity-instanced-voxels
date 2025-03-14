@@ -118,7 +118,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.VoxelData {
 			};
 		}
 
-		private static NativeArray<float3> GetSideVertices(int sideIndex, float voxelSize) {
+		public static NativeArray<float3> GetSideVertices(int sideIndex, float voxelSize) {
 			var result = new NativeArray<float3>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 			switch (sideIndex) {
 				case 0:

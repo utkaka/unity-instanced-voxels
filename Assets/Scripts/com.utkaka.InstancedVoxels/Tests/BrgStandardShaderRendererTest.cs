@@ -14,6 +14,7 @@ namespace com.utkaka.InstancedVoxels.Tests {
             yield return new RendererTestCase("Cube_001", CullingOptions.InnerSides);
             yield return new RendererTestCase("Cube_1_div_255", CullingOptions.InnerSides);
             yield return new RendererTestCase("Spider_00072", CullingOptions.InnerSides);
+            yield return new RendererTestCase("Spider_0005", CullingOptions.InnerSides);
         }
 
         [UnityTest, Performance]

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Burst;
 using Unity.Collections;
@@ -11,10 +12,11 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 	public struct CalculateVisibilityBoundsJob : IJobParallelFor {
 		private readonly float _voxelSize;
 		private readonly float3 _startPosition;
-		private readonly float3 _sideNormal;
+		private readonly float3 _sideVertex1;
+		private readonly float3 _sideVertex2;
+		private readonly float3 _sideVertex3;
 		private readonly VoxelsBox _voxelsBox;
-		private readonly float3 _cameraPosition;
-		private readonly float3 _cameraForward;
+		private readonly float4x4 _cullingMatrix;
 		private readonly int _framesCount;
 		private readonly int _currentAnimationFrame;
 		private readonly int _nextAnimationFrame;
@@ -28,17 +30,17 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		[WriteOnly, NativeDisableContainerSafetyRestriction]
 		private NativeSlice<VoxelsBounds> _visibilityBounds;
 
-		public CalculateVisibilityBoundsJob(float voxelSize, float3 startPosition, float3 sideNormal,
-			VoxelsBox voxelsBox, float3 cameraPosition, float3 cameraForward, int framesCount, int currentAnimationFrame,
+		public CalculateVisibilityBoundsJob(float voxelSize, float3 startPosition, float3 sideVertex1, float3 sideVertex2, float3 sideVertex3, VoxelsBox voxelsBox, float4x4 cullingMatrix, int framesCount, int currentAnimationFrame,
 			int nextAnimationFrame, float frameTransitionRatio, NativeArray<float3> bonesPositions,
 			NativeArray<float3> bonesAnimationPositions, NativeArray<float4> bonesAnimationRotations,
 			NativeSlice<VoxelsBounds> visibilityBounds) {
 			_voxelSize = voxelSize;
 			_startPosition = startPosition;
-			_sideNormal = sideNormal;
+			_sideVertex1 = sideVertex1;
+			_sideVertex2 = sideVertex2;
+			_sideVertex3 = sideVertex3;
 			_voxelsBox = voxelsBox;
-			_cameraPosition = cameraPosition;
-			_cameraForward = cameraForward;
+			_cullingMatrix = cullingMatrix;
 			_framesCount = framesCount;
 			_currentAnimationFrame = currentAnimationFrame;
 			_nextAnimationFrame = nextAnimationFrame;
@@ -125,13 +127,36 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 		}
 		
 		private bool IsVisible(byte3 voxel, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
-			var voxelPosition = new float3(voxel.x, voxel.y, voxel.z) * _voxelSize + _startPosition;
+			var vertex1Position = GetClipSpacetPosition(_sideVertex1, voxel, bonePosition, animationPosition, animationRotation);
+			var vertex2Position = GetClipSpacetPosition(_sideVertex2, voxel, bonePosition, animationPosition, animationRotation);
+			var vertex3Position = GetClipSpacetPosition(_sideVertex3, voxel, bonePosition, animationPosition, animationRotation);
+			
+			var ab = vertex2Position - vertex1Position;
+			var ac = vertex3Position - vertex1Position;
+			
+			return ab.x * ac.y - ac.x * ab.y >= 0.0f;
+		}
+
+		private float3 GetClipSpacetPosition(float3 vertexPosition, byte3 voxel, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
+			vertexPosition += new float3(voxel.x, voxel.y, voxel.z) * _voxelSize + _startPosition;
 			var quaternion = new quaternion(animationRotation);
-			var offsetPoint = voxelPosition - bonePosition;
+			var offsetPoint = vertexPosition - bonePosition;
 			var rotatedPoint = math.mul(quaternion, offsetPoint) + bonePosition;
-			voxelPosition = rotatedPoint + animationPosition;
-			var cameraToVoxel = voxelPosition - _cameraPosition;
-			return math.dot(_cameraForward, cameraToVoxel) >= 0 && math.dot(math.mul(quaternion, _sideNormal), cameraToVoxel)  <= 0.0f;
+			vertexPosition = rotatedPoint + animationPosition;
+			return MultiplyPoint(_cullingMatrix, vertexPosition);
+		}
+		
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private float3 MultiplyPoint(float4x4 matrix, float3 point) {
+			float3 vector3;
+			vector3.x = (float) ((double) matrix.c0.x * (double) point.x + (double) matrix.c1.x * (double) point.y + (double) matrix.c2.x * (double) point.z) + matrix.c3.x;
+			vector3.y = (float) ((double) matrix.c0.y * (double) point.x + (double) matrix.c1.y * (double) point.y + (double) matrix.c2.y * (double) point.z) + matrix.c3.y;
+			vector3.z = (float) ((double) matrix.c0.z * (double) point.x + (double) matrix.c1.z * (double) point.y + (double) matrix.c2.z * (double) point.z) + matrix.c3.z;
+			var num = 1f / ((float) ((double) matrix.c0.w * (double) point.x + (double) matrix.c1.w * (double) point.y + (double) matrix.c2.w * (double) point.z) + matrix.c3.w);
+			vector3.x *= num;
+			vector3.y *= num;
+			vector3.z *= num;
+			return vector3;
 		}
 	}
 }
