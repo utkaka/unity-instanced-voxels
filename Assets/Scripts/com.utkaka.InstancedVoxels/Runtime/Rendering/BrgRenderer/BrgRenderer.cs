@@ -59,9 +59,12 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			if (_material == null) {
 				_material = GetDefaultMaterial();
 			}
+			InitVoxels();
+			_voxels = null;
 		}
 		
 		private void OnEnable() {
+			if (_voxels == null) return;
 			InitVoxels();
 		}
 
@@ -257,7 +260,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.BrgRenderer {
 			var visibleSideVoxelsArray = FillDrawCommandJob.Malloc<int>((uint)offset);
 			
 			var cullingMatrix = cullingContext.cullingSplits[0].cullingMatrix;
-			
+			//var cullingMatrix = Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix;
 			
 			var handle = default(JobHandle);
 			var itemsPerWindow = BatchMetadata.ItemsPerWindow;

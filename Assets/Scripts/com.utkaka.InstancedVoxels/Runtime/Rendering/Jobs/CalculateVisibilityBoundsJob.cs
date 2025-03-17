@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using com.utkaka.InstancedVoxels.Runtime.Extensions;
 using com.utkaka.InstancedVoxels.Runtime.VoxelData;
 using Unity.Burst;
 using Unity.Collections;
@@ -60,13 +61,13 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 				_bonesAnimationPositions[animationIndex + _nextAnimationFrame],
 				_frameTransitionRatio);
 			
-			var quadBounds1 = GetQuadBounds(new byte3(0, 0, 0), byte3.right(), byte3.up(), _voxelsBox.Size.x,
+			var quadBounds1 = GetQuadBounds(new int3(0, 0, 0), MathExtensions.Int3Right(), MathExtensions.Int3Up(), _voxelsBox.Size.x,
 				_voxelsBox.Size.y, index, bonePosition, animationPosition, animationRotation);
-			var quadBounds2 = GetQuadBounds(new byte3(0, 0, 0), byte3.forward(), byte3.up(), _voxelsBox.Size.z,
+			var quadBounds2 = GetQuadBounds(new int3(0, 0, 0), MathExtensions.Int3Forward(), MathExtensions.Int3Up(), _voxelsBox.Size.z,
 				_voxelsBox.Size.y, index, bonePosition, animationPosition, animationRotation);
-			var quadBounds3 = GetQuadBounds(new byte3(0, 0, (byte)_voxelsBox.Size.z), byte3.right(), byte3.up(), _voxelsBox.Size.z,
+			var quadBounds3 = GetQuadBounds(new int3(0, 0, _voxelsBox.Size.z), MathExtensions.Int3Right(), MathExtensions.Int3Up(), _voxelsBox.Size.z,
 				_voxelsBox.Size.y, index, bonePosition, animationPosition, animationRotation);
-			var quadBounds4 = GetQuadBounds(new byte3((byte)_voxelsBox.Size.x, 0, 0), byte3.forward(), byte3.up(), _voxelsBox.Size.z,
+			var quadBounds4 = GetQuadBounds(new int3(_voxelsBox.Size.x, 0, 0), MathExtensions.Int3Forward(), MathExtensions.Int3Up(), _voxelsBox.Size.z,
 				_voxelsBox.Size.y, index, bonePosition, animationPosition, animationRotation);
 
 			var minPoint = new int3(
@@ -82,7 +83,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 			_visibilityBounds[index] = new VoxelsBounds(minPoint, maxPoint);
 		}
 
-		private int4 GetQuadBounds(byte3 start, byte3 axis1, byte3 axis2, int boxAxisSize1, int boxAxisSize2, int boneIndex, float3 bonePosition,
+		private int4 GetQuadBounds(int3 start, int3 axis1, int3 axis2, int boxAxisSize1, int boxAxisSize2, int boneIndex, float3 bonePosition,
 			float3 animationPosition, float4 animationRotation) {
 			var squareSize = math.min(boxAxisSize1, boxAxisSize2);
 			var squareBounds = GetAxisBounds(start, axis1 + axis2, squareSize, bonePosition,
@@ -99,7 +100,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 				math.min(axis2Bounds1.x, axis2Bounds2.x), math.max(axis2Bounds1.y, axis2Bounds2.y));
 		}
 
-		private int2 GetAxisBounds(byte3 start, byte3 axis, int boxAxisSize, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
+		private int2 GetAxisBounds(int3 start, int3 axis, int boxAxisSize, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
 			var left = 0;
 			var right = boxAxisSize + 1;
 			if (IsVisible(start, bonePosition, animationPosition, animationRotation)) {
@@ -126,10 +127,10 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 			return new int2(left, boxAxisSize);
 		}
 		
-		private bool IsVisible(byte3 voxel, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
-			var vertex1Position = GetClipSpacetPosition(_sideVertex1, voxel, bonePosition, animationPosition, animationRotation);
-			var vertex2Position = GetClipSpacetPosition(_sideVertex2, voxel, bonePosition, animationPosition, animationRotation);
-			var vertex3Position = GetClipSpacetPosition(_sideVertex3, voxel, bonePosition, animationPosition, animationRotation);
+		private bool IsVisible(int3 voxel, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
+			var vertex1Position = GetClipSpacePosition(_sideVertex1, voxel, bonePosition, animationPosition, animationRotation);
+			var vertex2Position = GetClipSpacePosition(_sideVertex2, voxel, bonePosition, animationPosition, animationRotation);
+			var vertex3Position = GetClipSpacePosition(_sideVertex3, voxel, bonePosition, animationPosition, animationRotation);
 			
 			var ab = vertex2Position - vertex1Position;
 			var ac = vertex3Position - vertex1Position;
@@ -137,7 +138,7 @@ namespace com.utkaka.InstancedVoxels.Runtime.Rendering.Jobs {
 			return ab.x * ac.y - ac.x * ab.y >= 0.0f;
 		}
 
-		private float3 GetClipSpacetPosition(float3 vertexPosition, byte3 voxel, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
+		private float3 GetClipSpacePosition(float3 vertexPosition, int3 voxel, float3 bonePosition, float3 animationPosition, float4 animationRotation) {
 			vertexPosition += new float3(voxel.x, voxel.y, voxel.z) * _voxelSize + _startPosition;
 			var quaternion = new quaternion(animationRotation);
 			var offsetPoint = vertexPosition - bonePosition;

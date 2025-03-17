@@ -267,7 +267,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 586840229}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5241174b8f2c4a4d82a759a990a0d2a6, type: 3}
   m_Name: 
@@ -288,7 +288,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 177638, guid: 0abab5bb77339e4428787a870eb31bd3, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 22451668, guid: 0abab5bb77339e4428787a870eb31bd3, type: 3}
       propertyPath: m_Pivot.x
@@ -496,7 +496,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a00f95278f94d18a82443bf22fa2925, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _voxels: {fileID: 11400000, guid: cd3bc758e54eb44b3a8191f03d805e33, type: 2}
+  _voxels: {fileID: 11400000, guid: 95385352bce7f4df8925ccf186a4c258, type: 2}
   _material: {fileID: 2100000, guid: 89192c7dc97a4433585088c8b5119758, type: 2}
 --- !u!4 &899315951
 Transform:
